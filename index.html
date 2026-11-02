@@ -35,7 +35,7 @@
         body {
             background: var(--bg); color: var(--text);
             font-family: system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
-            display: flex; flex-direction: column; overflow-x: hidden;
+            display: flex; flex-direction: column; overflow: hidden;
         }
 
         /* ===== Header ===== */
@@ -63,7 +63,7 @@
 
         /* ===== Layout ===== */
         .wrap {
-            flex: 1; display: flex; flex-direction: column; gap: 16px;
+            flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 16px;
             width: 100%; max-width: 1000px; margin: 16px auto; padding: 0 0;
         }
         @media (max-width: 1040px) { .wrap { width: calc(100% - 24px); } }
@@ -142,7 +142,7 @@
         .btn-copy { width: 42px; height: 36px; font-size: 13px; background: #374151; }
 
         /* ===== Bottom ===== */
-        .bottom { flex: 1; display: flex; gap: 20px; min-height: 260px; }
+        .bottom { flex: 1; display: flex; gap: 20px; min-height: 0; overflow: hidden; }
 
         .player-box {
             flex: 1; min-width: 0; position: relative; background: #000; border-radius: 10px;
@@ -179,7 +179,7 @@
         .sidebar {
             width: 295px; flex-shrink: 0; background: var(--panel-2);
             border: 1px solid var(--border); border-radius: 10px; padding: 10px;
-            display: flex; flex-direction: column; overflow: hidden;
+            display: flex; flex-direction: column; overflow: hidden; min-height: 0;
         }
         .search-row { display: flex; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
         .count-box {
@@ -231,7 +231,10 @@
             .fields > * { flex: 1 1 45%; }
             .actions { flex-direction: column; align-items: stretch; }
             .group { flex-wrap: wrap; justify-content: center; }
-            .bottom { flex-direction: column; }
+            html, body { height: auto; }
+            body { overflow: auto; }
+            .wrap { min-height: auto; }
+            .bottom { flex-direction: column; overflow: visible; flex: none; }
             .player-box { height: 300px; flex: none; }
             .sidebar { width: 100%; height: 320px; }
         }
@@ -493,9 +496,9 @@
             playStream('اختبار سريّع', url, k1, k2);
         }
 
-        function playParsedChannel(index) {
+        function playParsedChannel(index, alignTop = false) {
             activeChannelIndex = index;
-            updateActiveChannelStyle();
+            updateActiveChannelStyle(alignTop);
 
             const ch = window.extractedChannelsList[index];
             if (ch) {
@@ -512,7 +515,7 @@
         }
 
         /* تظليل القناة النشطة — القائمة نفسها لا تتحرك إلا إذا خرجت القناة من مجال الرؤية */
-        function updateActiveChannelStyle() {
+        function updateActiveChannelStyle(alignTop = false) {
             document.querySelectorAll('.channel-card').forEach(el => el.classList.remove('active'));
             if (activeChannelIndex === -1) return;
             const card = document.getElementById(`channelCard_${activeChannelIndex}`);
@@ -522,8 +525,15 @@
             const list = document.getElementById('parsedList');
             const top = card.offsetTop - 8;
             const bottom = card.offsetTop + card.offsetHeight + 8;
-            if (top < list.scrollTop) list.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
-            else if (bottom > list.scrollTop + list.clientHeight) list.scrollTo({ top: bottom - list.clientHeight, behavior: 'smooth' });
+            if (alignTop) {
+                // التنقل بالأزرار: القناة المختارة تثبت عند أول مربع والقائمة هي التي تتحرك
+                // (المتصفح يوقف التمرير تلقائياً عند آخر القائمة فيتحرك التظليل لأسفل)
+                list.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+            } else if (top < list.scrollTop) {
+                list.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+            } else if (bottom > list.scrollTop + list.clientHeight) {
+                list.scrollTo({ top: bottom - list.clientHeight, behavior: 'smooth' });
+            }
         }
 
         /* ===== الفلاتر والبحث والتنقل ===== */
@@ -573,7 +583,7 @@
             let pos = vis.indexOf(activeChannelIndex);
             if (pos === -1) pos = step > 0 ? -1 : vis.length;
             pos = (pos + step + vis.length) % vis.length;
-            playParsedChannel(vis[pos]);
+            playParsedChannel(vis[pos], true);
         }
 
         function renderList() {

@@ -190,7 +190,7 @@
         #searchInput { height: 37px; font-size: 12px; padding: 0 12px; font-family: inherit; }
         #parsedList {
             flex: 1; min-height: 0; position: relative; overflow-y: auto; padding-top: 8px;
-            display: flex; flex-direction: column; gap: 6px; scrollbar-width: thin;
+            display: flex; flex-direction: column; gap: 6px;
         }
         .empty { margin: 28px auto 0; color: #6b6b6b; font-size: 12px; }
 
@@ -211,9 +211,14 @@
         }
         .ch-btns button:hover { background: #4b5563; color: #fff; }
 
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-thumb { background: #3a3a3a; border-radius: 4px; }
+        /* شريط تمرير داكن هادئ بدل الأبيض */
+        :root { color-scheme: dark; }
+        * { scrollbar-width: thin; scrollbar-color: #3f4d45 transparent; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-thumb { background: #3f4d45; border-radius: 6px; border: 2px solid transparent; background-clip: padding-box; }
+        ::-webkit-scrollbar-thumb:hover { background: #4f6156; background-clip: padding-box; border: 2px solid transparent; }
         ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-corner { background: transparent; }
 
         /* ===== JW Player tweaks (من الكود الأصلي) ===== */
         .jw-icon-playlist, .jw-icon-next, .jw-related-btn { display: none !important; }
@@ -422,14 +427,14 @@
             currentPlayer.on('setupError', function() { setStatus('فشل التشغيل', 'error'); });
         }
 
-        function playStream(name, url, k1, k2) {
+        function playStream(name, url, k1, k2, allKeys) {
             if (!url) return;
             setTitle(name || 'رابط اختباري');
             setStatus('جاري التحميل...', 'loading');
 
             if (document.getElementById('playerType').value === 'shaka') {
                 destroyJW();
-                playWithShaka(url, k1, k2);
+                playWithShaka(url, k1, k2, allKeys);
                 return;
             }
 
@@ -446,7 +451,7 @@
             }
         }
 
-        async function playWithShaka(url, k1, k2) {
+        async function playWithShaka(url, k1, k2, allKeys) {
             try {
                 shaka.polyfill.installAll();
                 let video = document.getElementById('shakaVideo');
@@ -459,7 +464,8 @@
                     shakaPlayer = new shaka.Player(video);
                     shakaPlayer.addEventListener('error', () => setStatus('فشل التشغيل', 'error'));
                 }
-                shakaPlayer.configure({ drm: { clearKeys: (k1 && k2) ? { [k1]: k2 } : {} } });
+                const keys = (allKeys && Object.keys(allKeys).length) ? allKeys : ((k1 && k2) ? { [k1]: k2 } : {});
+                shakaPlayer.configure({ drm: { clearKeys: keys } });
                 await shakaPlayer.load(url);
                 setStatus('يعمل الآن', 'playing');
             } catch (err) {
@@ -493,7 +499,8 @@
             const url = document.getElementById('singleUrl').value.trim();
             const k1 = document.getElementById('singleK1').value.trim();
             const k2 = document.getElementById('singleK2').value.trim();
-            playStream('اختبار سريّع', url, k1, k2);
+            const known = window.extractedChannelsList.find(c => c.url === url && c.k1 === k1);
+            playStream('اختبار سريّع', url, k1, k2, known ? known.allKeys : null);
         }
 
         function playParsedChannel(index, alignTop = false) {
@@ -510,7 +517,7 @@
                 // تأخير بسيط: عند الضغط السريع على التالي/السابق تُحمّل آخر قناة فقط
                 clearTimeout(playTimer);
                 setStatus('جاري التحميل...', 'loading');
-                playTimer = setTimeout(() => playStream(ch.name, ch.url, ch.k1, ch.k2), 180);
+                playTimer = setTimeout(() => playStream(ch.name, ch.url, ch.k1, ch.k2, ch.allKeys), 180);
             }
         }
 
@@ -626,114 +633,375 @@
             updateActiveChannelStyle();
         }
 
-        /* ===== المحلل (Parser) كما هو ===== */
-        function parseInputText(text) {
-            const channels = [];
+        /* ===== المحلل الذكي: يستخرج الاسم والرابط والشفرات مهما كان الشكل أو الترتيب ===== */
+const HEX32_RE = /^[0-9a-f]{32}$/i;
+const KID_ALIAS = new Set(['keyid', 'key_id', 'key-id', 'kid', 'k1', 'default_kid', 'defaultkid', 'keyids']);
+const KEY_ALIAS = new Set(['key', 'k', 'k2', 'keyvalue', 'key_value', 'contentkey', 'content_key']);
+const NAME_ALIAS = ['name', 'channel_name', 'channelname', 'channel', 'title', 'display_name', 'displayname',
+    'label', 'tvg-name', 'tvg_name', 'text', 'caption', 'id', 'slug'];
+const GENERIC_DICT_KEYS = new Set(['channels', 'sources', 'source', 'drm', 'clearkey', 'clearkeys', 'items', 'data',
+    'playlist', 'config', 'setup', 'headers', 'keys', 'tracks', 'file', 'files', 'result', 'results', 'list', 'streams',
+    'stream', 'options', 'params', 'settings', 'player', 'jwplayer', 'sets', 'videos', 'video', 'entries']);
+const EXCL_CTX = /logo|icon|image|img|poster|thumb|cover|epg|licen[sc]e|laurl|la_url|certificate|cert|referer|referrer|origin|website|banner|background|avatar|picture|preview|homepage/i;
+const URL_CTX = /^(url|file|src|source|link|stream|uri|manifest|hls|dash|mpd|m3u8|m3u|playbackurl|videourl|streamurl|stream_url|video_url|m3u8url|mpdurl|live|channel_url|path)$/i;
+const MANIFEST_EXT = /\.(mpd|m3u8|m3u|ts|mp4|mkv|flv|mpegts|isml?)(?=[\/?#&|,"'\s]|$)/i;
+const HEX_TOKEN = '[0-9a-fA-F][0-9a-fA-F-]{30,34}[0-9a-fA-F]';
+const PAIR_RE_SRC = '(?<![0-9a-fA-F-])(' + HEX_TOKEN + ')["\'`]?\\s*[:=]\\s*["\'`]?(' + HEX_TOKEN + ')(?![0-9a-fA-F-])';
 
-            function addChannel(name, url, k1 = '', k2 = '') {
-                if (!url) return;
-                url = url.trim();
-                name = (name || '').trim() || `قناة ${channels.length + 1}`;
-                k1 = (k1 || '').trim();
-                k2 = (k2 || '').trim();
+function normalizeText(t) {
+    let s = String(t).replace(/\r\n?/g, '\n')
+        .replace(/[\u200e\u200f\u202a-\u202e\u2066-\u2069\ufeff]/g, '')
+        .replace(/\\u002[fF]/g, '/').replace(/\\u0026/g, '&').replace(/\\\//g, '/')
+        .replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#0*39;/g, "'")
+        .replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+    // نص JSON مغلّف داخل نص (علامات تنصيص مهرّبة)
+    if (/\\"(url|file|name|title|keyId|key)\\"/i.test(s)) s = s.replace(/\\"/g, '"');
+    return s;
+}
 
-                if (!channels.some(c => c.url === url)) {
-                    channels.push({ name, url, k1, k2 });
-                }
-            }
+function normKey(v, allowB64) {
+    if (v == null) return '';
+    v = String(v).trim().replace(/^["'`]+|["'`]+$/g, '');
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v)) v = v.replace(/-/g, '');
+    if (HEX32_RE.test(v)) return v.toLowerCase();
+    if (allowB64 && /^[A-Za-z0-9_-]{22}(==)?$/.test(v)) {
+        try {
+            const b = atob(v.replace(/=+$/, '').replace(/-/g, '+').replace(/_/g, '/') + '==');
+            if (b.length === 16) return Array.from(b).map(c => c.charCodeAt(0).toString(16).padStart(2, '0')).join('');
+        } catch (e) { /* ignore */ }
+    }
+    return '';
+}
 
-            // 1. استخراج صيغ M3U / Kodi / EXTVLCOPT / KODIPROP
-            if (text.includes('#EXTINF')) {
-                const blocks = text.split('#EXTINF');
-                blocks.forEach(block => {
-                    if (!block.trim()) return;
+function cleanName(n) {
+    return String(n || '').replace(/<[^>]*>/g, ' ').replace(/\\(["'`\\\/])/g, '$1')
+        .replace(/\s+/g, ' ').replace(/^[\s"'`,;|:\-]+|[\s"'`,;|:]+$/g, '').trim();
+}
 
-                    let name = '';
-                    const nameMatch = block.match(/,(.+?)(?:\r?\n|$)/);
-                    if (nameMatch) {
-                        name = nameMatch[1].trim();
-                    }
+function validName(n) {
+    if (!n || n.length > 120) return false;
+    if (/^https?:/i.test(n) || HEX32_RE.test(n)) return false;
+    return /[\p{L}\p{N}]/u.test(n);
+}
 
-                    let k1 = '', k2 = '';
+/* كل الحقول (مفتاح: قيمة) بأي ترتيب — بعلامات تنصيص أو بدونها */
+function extractFields(text) {
+    const out = [];
+    const re = /(?:^|[\s,{\[(;])["'`]?([A-Za-z_$][\w$\-]*)["'`]?\s*[:=]\s*(?:(["'`])((?:\\.|(?!\2)[^\\])*)\2|([^\s,{}\[\]()]+))/g;
+    let m;
+    while ((m = re.exec(text)) !== null) {
+        const quoted = m[2] !== undefined;
+        out.push({ k: m[1], v: quoted ? m[3] : m[4], q: quoted });
+    }
+    return out;
+}
 
-                    const keyMatch = block.match(/(?:license_key|http-drm-license|inputstream\.adaptive\.license_key)\s*=\s*([a-fA-F0-9]{32}):([a-fA-F0-9]{32})/i)
-                                   || block.match(/(?:license_key|http-drm-license|inputstream\.adaptive\.license_key)\s*=\s*([a-fA-F0-9\-_]{20,64}):([a-fA-F0-9\-_]{20,64})/i);
-
-                    if (keyMatch) {
-                        k1 = keyMatch[1];
-                        k2 = keyMatch[2];
-                    } else {
-                        const k1Match = block.match(/keyId\s*=\s*["']?([a-fA-F0-9]{32})["']?/i);
-                        const k2Match = block.match(/key\s*=\s*["']?([a-fA-F0-9]{32})["']?/i);
-                        if (k1Match && k2Match) {
-                            k1 = k1Match[1];
-                            k2 = k2Match[1];
-                        }
-                    }
-
-                    const lines = block.split(/\r?\n/);
-                    let url = '';
-                    for (let line of lines) {
-                        line = line.trim();
-                        if (line.startsWith('http://') || line.startsWith('https://')) {
-                            if (!line.includes('http-drm-license=') && !line.includes('license-key=')) {
-                                url = line;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (url) {
-                        addChannel(name, url, k1, k2);
-                    }
-                });
-            }
-
-            // 2. استخراج أكواد JWPlayer / HTML / JS
-            const jwDrmMatches = [...text.matchAll(/["']?file["']?\s*:\s*["'](https?:\/\/[^"'\s]+)["'][\s\S]*?["']?keyId["']?\s*:\s*["']([a-fA-F0-9]{32}|[a-fA-F0-9\-]{20,64})["'][\s\S]*?["']?key["']?\s*:\s*["']([a-fA-F0-9]{32}|[a-fA-F0-9\-]{20,64})["']/gi)];
-            jwDrmMatches.forEach(m => {
-                addChannel('', m[1], m[2], m[3]);
-            });
-
-            // 3. استخراج كائنات JS Objects المعرفة
-            const jsObjMatches = [...text.matchAll(/\{[\s\S]*?url\s*:\s*["'](https?:\/\/[^"'\s]+)["'][\s\S]*?\}/gi)];
-            jsObjMatches.forEach(m => {
-                const str = m[0];
-                const u = str.match(/url\s*:\s*["']([^"']+)["']/i);
-                const nameM = str.match(/(?:name|id)\s*:\s*["']([^"']+)["']/i);
-                const k1M = str.match(/(?:k1|keyId)\s*:\s*["']([^"']+)["']/i);
-                const k2M = str.match(/(?:k2|key)\s*:\s*["']([^"']+)["']/i);
-                if (u) {
-                    addChannel(nameM ? nameM[1] : '', u[1], k1M ? k1M[1] : '', k2M ? k2M[1] : '');
-                }
-            });
-
-            // 4. استخراج مصفوفات JS
-            const arrayObjMatches = [...text.matchAll(/name\s*:\s*["']([^"']+)["']\s*,\s*url\s*:\s*["']([^"']+)["'](?:\s*,\s*k1\s*:\s*["']([^"']+)["'])?(?:\s*,\s*k2\s*:\s*["']([^"']+)["'])?/gi)];
-            arrayObjMatches.forEach(m => {
-                addChannel(m[1], m[2], m[3] || '', m[4] || '');
-            });
-
-            // 5. روابط Kodi المدمجة مباشرة
-            const mergedMatches = [...text.matchAll(/license_key=([a-fA-F0-9]{32}):([a-fA-F0-9]{32})(https?:\/\/[^\s"'\)]+)/gi)];
-            mergedMatches.forEach(m => {
-                addChannel('', m[3], m[1], m[2]);
-            });
-
-            // 6. الاحتياطي العام
-            if (channels.length === 0) {
-                const urls = text.match(/https?:\/\/[^\s"'\)]+/g) || [];
-                const validUrls = urls.filter(u => !u.includes('license') && !u.includes('acquire-license'));
-                const targetUrls = validUrls.length > 0 ? validUrls : urls;
-
-                const keys = text.match(/([a-fA-F0-9]{32})/g) || [];
-                targetUrls.forEach((u, i) => {
-                    addChannel(`قناة مكتشفة ${i + 1}`, u, keys[i * 2] || '', keys[i * 2 + 1] || '');
-                });
-            }
-
-            return channels;
+function pickName(fields) {
+    for (const alias of NAME_ALIAS) {
+        for (const f of fields) {
+            if (!f.q || f.k.toLowerCase() !== alias) continue;
+            const n = cleanName(f.v);
+            if (alias === 'id' && /^\d+$/.test(n)) continue;
+            if (validName(n)) return n;
         }
+    }
+    return '';
+}
+
+function pairsFromFields(fields) {
+    const out = [];
+    let kid = '', key = '';
+    for (const f of fields) {
+        const lk = f.k.toLowerCase();
+        if (KID_ALIAS.has(lk)) {
+            const n = normKey(f.v, lk === 'kid' || lk === 'default_kid');
+            if (n) kid = n;
+        } else if (KEY_ALIAS.has(lk)) {
+            const n = normKey(f.v, lk === 'k');
+            if (n) key = n;
+        }
+        if (kid && key) { out.push([kid, key]); kid = ''; key = ''; }
+    }
+    return out;
+}
+
+/* الشفرات: kid:key  |  "kid":"key"  |  keyId/key بأي ترتيب  |  k/kid (base64)  |  توالي أرقام hex */
+function extractKeyPairs(text) {
+    const pairs = [], seen = new Set();
+    const add = (a, b) => { if (a && b && !seen.has(a)) { seen.add(a); pairs.push([a, b]); } };
+    const t = String(text).replace(/https?:\/\/[^\s"'`<>]+/gi, ' ');
+
+    const re = new RegExp(PAIR_RE_SRC, 'g');
+    let m;
+    while ((m = re.exec(t)) !== null) add(normKey(m[1]), normKey(m[2]));
+
+    pairsFromFields(extractFields(t)).forEach(p => add(p[0], p[1]));
+
+    if (pairs.length === 0) {
+        const tokens = t.match(/(?<![0-9a-fA-F-])[0-9a-fA-F]{32}(?![0-9a-fA-F-])/g) || [];
+        for (let i = 0; i + 1 < tokens.length; i += 2) add(tokens[i].toLowerCase(), tokens[i + 1].toLowerCase());
+    }
+    return pairs;
+}
+
+function nameFromUrl(url) {
+    try {
+        const u = new URL(url);
+        const segs = u.pathname.split('/').filter(Boolean);
+        const skip = /^(dash|hls|out|v\d+|live|eds|index|manifest|master|playlist|chunklist|stream|main|mpd|m3u8|\d+|[0-9a-f]{20,})$/i;
+        let file = segs.length ? segs[segs.length - 1].replace(/\.[a-z0-9]+$/i, '') : '';
+        if (file && !skip.test(file)) return file;
+        for (let i = segs.length - 2; i >= 0; i--) {
+            const s = segs[i].replace(/\.[a-z0-9]+$/i, '');
+            if (!skip.test(s)) return s;
+        }
+        return u.hostname;
+    } catch (e) { return ''; }
+}
+
+function makeStore() {
+    const list = [], idx = new Map();
+    const k = u => u.replace(/[\s,;]+$/, '');
+    return {
+        list,
+        has: u => idx.has(k(u)),
+        add(ch) {
+            const u = k(ch.url || '');
+            if (!u) return;
+            let ex = idx.get(u);
+            if (!ex) { ex = { name: '', nameFound: false, url: u, pairs: [] }; idx.set(u, ex); list.push(ex); }
+            if (ch.name && !ex.nameFound) { ex.name = ch.name; ex.nameFound = true; }
+            (ch.pairs || []).forEach(p => { if (!ex.pairs.some(q => q[0] === p[0])) ex.pairs.push(p); });
+        }
+    };
+}
+
+/* ---------- 1) M3U / Kodi / EXTVLCOPT ---------- */
+function parseM3U(src, store) {
+    const fresh = () => ({ name: '', pairs: [] });
+    let meta = fresh();
+    for (const raw of src.split('\n')) {
+        const line = raw.trim();
+        if (!line) continue;
+        if (/^#EXTINF/i.test(line)) {
+            meta = fresh();
+            const stripped = line.replace(/[\w\-.]+\s*=\s*"[^"]*"/g, '').replace(/[\w\-.]+\s*=\s*'[^']*'/g, '');
+            const ci = stripped.indexOf(',');
+            let name = ci >= 0 ? cleanName(stripped.slice(ci + 1)) : '';
+            if (!validName(name)) {
+                const tm = line.match(/tvg-name\s*=\s*"([^"]+)"/i);
+                name = tm ? cleanName(tm[1]) : '';
+            }
+            meta.name = validName(name) ? name : '';
+            continue;
+        }
+        if (line[0] === '#') { meta.pairs.push(...extractKeyPairs(line)); continue; }
+        const um = line.match(/^https?:\/\/\S+/i);
+        if (um) {
+            const parts = um[0].split('|');
+            const pairs = meta.pairs.concat(extractKeyPairs(line.slice(um[0].length) + ' ' + parts.slice(1).join('|')));
+            store.add({ name: meta.name, url: parts[0].replace(/[.,;:!]+$/, ''), pairs });
+            meta = fresh();
+        }
+    }
+}
+
+/* ---------- روابط البث ---------- */
+function findStreamUrls(src) {
+    const hits = [];
+    const re = /https?:\/\/[^\s"'`<>\\)\]}]+/gi;
+    let m;
+    while ((m = re.exec(src)) !== null) {
+        const raw = m[0], start = m.index;
+        let url = raw, suffix = '', hadPipe = false;
+        const pi = url.indexOf('|');
+        if (pi > -1) { suffix = url.slice(pi + 1); url = url.slice(0, pi); hadPipe = true; }
+        const ci = url.search(/,(?=[0-9a-fA-F]{32})/);
+        if (ci > -1) url = url.slice(0, ci);
+        url = url.replace(/[.,;:!]+$/, '');
+        if (url.length < 10) continue;
+
+        const pre = src.slice(Math.max(0, start - 80), start);
+        const cm = pre.match(/([A-Za-z_][\w\-.]*)["'`]?\s*[:=]\s*["'`]?\s*$/);
+        const ctx = cm ? cm[1].split('.').pop() : '';
+        const low = url.toLowerCase();
+
+        if (/\.(png|jpe?g|gif|webp|svg|ico|bmp|css|js|json|html?|xml|txt|woff2?)(\?|#|$)/.test(low)) continue;
+        if (ctx && EXCL_CTX.test(ctx) && !URL_CTX.test(ctx)) continue;
+        const isManifest = MANIFEST_EXT.test(low);
+        if (/licen[sc]e|acquire-license|widevine|playready|drmtoday|\/lic[\/?]/.test(low) && !isManifest) continue;
+
+        let ok = isManifest || (ctx && URL_CTX.test(ctx));
+        if (!ok) {
+            const ls = src.lastIndexOf('\n', start - 1) + 1;
+            ok = /^[\s\-*\d.)]*$/.test(src.slice(ls, start));   // سطر يبدأ برابط فقط
+        }
+        if (!ok) continue;
+        hits.push({ url, start, end: start + (hadPipe ? raw.length : url.length), suffix });
+    }
+    return hits;
+}
+
+/* ---------- 2) كائنات {...} بأي ترتيب للحقول ---------- */
+function getBraceSpans(s) {
+    const spans = [], stack = [];
+    let q = null;
+    for (let i = 0; i < s.length; i++) {
+        const c = s[i];
+        if (q) {
+            if (c === '\\') { i++; continue; }
+            if (c === q) q = null;
+            else if (c === '\n' && q !== '`') q = null;
+            continue;
+        }
+        if (c === '"' || c === "'" || c === '`') { q = c; continue; }
+        if (c === '{') stack.push(i);
+        else if (c === '}' && stack.length) spans.push({ s: stack.pop(), e: i });
+    }
+    return spans;
+}
+
+function parseObjects(src, hits, store) {
+    if (!hits.length || src.indexOf('{') === -1) return;
+    const spans = getBraceSpans(src);
+    if (!spans.length) return;
+
+    const lowerBound = pos => {
+        let lo = 0, hi = hits.length;
+        while (lo < hi) { const mid = (lo + hi) >> 1; if (hits[mid].start < pos) lo = mid + 1; else hi = mid; }
+        return lo;
+    };
+    const distinctUrls = sp => {
+        const set = new Set();
+        for (let i = lowerBound(sp.s); i < hits.length && hits[i].start <= sp.e; i++) set.add(hits[i].url);
+        return set.size;
+    };
+
+    for (const h of hits) {
+        if (store.has(h.url)) continue;
+        const chain = spans.filter(sp => sp.s < h.start && sp.e >= h.end).sort((a, b) => (a.e - a.s) - (b.e - b.s));
+        if (!chain.length) continue;
+        let best = chain[0];
+        for (let i = 1; i < chain.length; i++) {
+            if (chain[i].e - chain[i].s > 3000) break;
+            if (distinctUrls(chain[i]) > 1) break;
+            best = chain[i];
+        }
+        const text = src.slice(best.s, best.e + 1);
+        const fields = extractFields(text);
+        let name = pickName(fields);
+        if (!name) {
+            const pm = src.slice(Math.max(0, best.s - 120), best.s)
+                .match(/["'`]?([^"'`{}\[\]\n:,][^"'`{}\[\]\n:]*?)["'`]?\s*:\s*$/);
+            if (pm) {
+                const cand = cleanName(pm[1]);
+                if (validName(cand) && !GENERIC_DICT_KEYS.has(cand.toLowerCase())) name = cand;
+            }
+        }
+        store.add({ name, url: h.url, pairs: extractKeyPairs(text + ' ' + h.suffix) });
+    }
+}
+
+/* ---------- 3) أسطر حرة: اسم | رابط | شفرات بأي ترتيب ---------- */
+function stripDecor(t) {
+    return String(t).replace(/^\s*(#|\/\/|\*|-|•)+\s*/, '').replace(/^\s*\d+\s*[.)]\s+/, '')
+        .replace(/[|,;=:"'`{}\[\]()<>]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function nameLike(line) {
+    const raw = String(line);
+    if (/https?:/i.test(raw) || /^\s*#EXT/i.test(raw)) return '';
+    if (/\b(k1|k2|keyid|key_id|kid|key|url|file|drm|license|clearkey)\b\s*[:=]/i.test(raw)) return '';
+    if (/licen[sc]e|clearkey|key_?id|\bk[12]\b|^\s*keys?\s*$/i.test(raw)) return '';
+    if (/(?<![0-9a-fA-F])[0-9a-fA-F]{32}(?![0-9a-fA-F])/.test(raw)) return '';
+    const t = stripDecor(raw);
+    if (!t || t.length > 100 || !/\p{L}/u.test(t)) return '';
+    return t;
+}
+
+function parseLoose(src, hits, store) {
+    if (!hits.length) return;
+    const lines = src.split('\n');
+    const starts = [];
+    let off = 0;
+    for (const l of lines) { starts.push(off); off += l.length + 1; }
+    const lineOf = pos => {
+        let lo = 0, hi = starts.length - 1;
+        while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (starts[mid] <= pos) lo = mid; else hi = mid - 1; }
+        return lo;
+    };
+    const infos = hits.map(h => ({ h, li: lineOf(h.start) }));
+    const n = infos.length;
+
+    const gapLines = g => {                       // g = الفجوة بعد الرابط g (‎-1 قبل الأول)
+        const from = (g < 0 ? -1 : infos[g].li) + 1;
+        const to = (g + 1 < n ? infos[g + 1].li : lines.length);
+        return lines.slice(from, to);
+    };
+    const gaps = [];
+    for (let g = -1; g < n; g++) {
+        const ls = gapLines(g);
+        gaps[g + 1] = { lines: ls, pairs: extractKeyPairs(ls.join('\n')), names: ls.map(nameLike).filter(Boolean) };
+    }
+    const keysFirst = gaps[0].pairs.length > 0;
+    const sameLineName = (info) => {
+        const line = lines[info.li];
+        const rest = line.slice(0, info.h.start - starts[info.li]) + ' ' + line.slice(info.h.end - starts[info.li]);
+        return rest;
+    };
+    const firstRest = sameLineName(infos[0]);
+    const nameBefore = !!(gaps[0].names.length || nameFromRest(firstRest)) || !gaps[1].names.length;
+
+    infos.forEach((info, i) => {
+        if (store.has(info.h.url)) return;
+        const rest = sameLineName(info);
+        const pairs = extractKeyPairs(rest + ' ' + info.h.suffix);
+        let name = nameFromRest(rest);
+
+        const keyGap = keysFirst ? gaps[i] : gaps[i + 1];
+        keyGap.pairs.forEach(p => pairs.push(p));
+
+        if (!name) {
+            if (nameBefore) { const ns = gaps[i].names; name = ns.length ? ns[ns.length - 1] : ''; }
+            else { const ns = gaps[i + 1].names; name = ns.length ? ns[0] : ''; }
+        }
+        store.add({ name, url: info.h.url, pairs });
+    });
+}
+
+function nameFromRest(rest) {
+    const n = pickName(extractFields(rest));
+    if (n) return n;
+    const t = nameLike(String(rest).replace(new RegExp(PAIR_RE_SRC, 'g'), ' '));
+    return validName(t) ? t : '';
+}
+
+/* ---------- الدالة الرئيسية ---------- */
+function parseInputText(text) {
+    const src = normalizeText(text);
+    const store = makeStore();
+
+    if (/#EXTINF/i.test(src)) parseM3U(src, store);
+    const hits = findStreamUrls(src);
+    parseObjects(src, hits, store);
+    parseLoose(src, hits, store);
+
+    const out = store.list.map(ex => {
+        const allKeys = {};
+        ex.pairs.forEach(p => { allKeys[p[0]] = p[1]; });
+        return {
+            name: ex.name || nameFromUrl(ex.url),
+            url: ex.url,
+            k1: ex.pairs.length ? ex.pairs[0][0] : '',
+            k2: ex.pairs.length ? ex.pairs[0][1] : '',
+            allKeys,
+            _pos: src.indexOf(ex.url)
+        };
+    });
+    out.sort((a, b) => a._pos - b._pos);
+    out.forEach(c => { delete c._pos; });
+    return out;
+}
 
         function parseAndLoadChannels() {
             const rawText = document.getElementById('bulkInput').value;

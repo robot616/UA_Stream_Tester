@@ -120,26 +120,42 @@
         .btn-clear:hover { background: #ff6b6b; }
         .btn-sq { width: 42px; font-size: 10px; }
 
+        /* "الكل": رمادي افتراضياً، أخضر فقط عندما يكون هو المعروض */
         .chip {
             height: 36px; padding: 0 10px; border-radius: 6px; background: transparent;
-            border: 1px solid; cursor: pointer; font-size: 12px; font-weight: 700;
-            display: inline-flex; align-items: center; gap: 8px; transition: .2s; opacity: .75;
+            border: 1px solid var(--border-2); color: #ccc; cursor: pointer; font-size: 12px; font-weight: 700;
+            display: inline-flex; align-items: center; gap: 8px; transition: .2s; opacity: .9;
         }
         .chip b {
-            min-width: 22px; height: 22px; padding: 0 5px; border-radius: 4px;
+            min-width: 22px; height: 22px; padding: 0 5px; border-radius: 4px; background: #343c4a; color: #fff;
             display: inline-flex; align-items: center; justify-content: center; font-size: 12px;
         }
-        .chip.all { color: var(--green); border-color: var(--green); }
-        .chip.all b { background: var(--green); color: #04130a; }
-        .chip.mpd { color: #b4443f; border-color: #6b2a28; }
-        .chip.mpd b { background: #7a2e2b; color: #e08a86; }
-        .chip.m3u8 { color: #2f6a99; border-color: #234a6b; }
-        .chip.m3u8 b { background: #274e70; color: #6aa7d6; }
-        .chip.ts { color: #a68a1e; border-color: #6b5a14; }
-        .chip.ts b { background: #7a6516; color: #d8bd4a; }
-        .chip:hover, .chip.active { opacity: 1; }
-        .chip.active { box-shadow: 0 0 0 1px currentColor inset; }
-        .btn-copy { width: 42px; height: 36px; font-size: 13px; background: #374151; }
+        .chip:hover { opacity: 1; background: #2c2c2c; }
+        .chip.active { color: var(--green); border-color: var(--green); opacity: 1; box-shadow: 0 0 0 1px var(--green) inset; }
+        .chip.active b { background: var(--green); color: #04130a; }
+
+        /* العدد + نسخ أكواد القنوات المعروضة */
+        .btn-copy { height: 36px; padding: 0 12px; background: #374151; font-size: 13px; }
+        .btn-copy svg { width: 15px; height: 15px; }
+
+        /* تقسيم القنوات: رمادي، أخضر فقط عند اختيار مجموعة */
+        .group-wrap { position: relative; display: flex; align-items: center; }
+        .btn-split { width: 42px; height: 36px; color: #ccc; }
+        .btn-split svg { width: 20px; height: 20px; }
+        .btn-split.active, .btn-split.active:hover { background: #1a3a24; border-color: var(--green); color: var(--green); }
+
+        .group-menu {
+            display: none; position: fixed; z-index: 500; box-sizing: border-box; overflow-y: auto;
+            background: #1c1c1c; border: 1px solid #444; border-radius: 8px; padding: 6px;
+            box-shadow: 0 8px 24px rgba(0,0,0,.7);
+        }
+        .group-menu.open { display: block; }
+        .gm-title { font-size: 11px; color: var(--green); padding: 6px 8px 4px; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
+        .gm-item { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 5px; cursor: pointer; font-size: 13px; }
+        .gm-item:hover { background: #2c3a30; }
+        .gm-item.sel { background: #1a3a24; outline: 1px solid var(--green); }
+        .gm-label { flex: 1; min-width: 0; }
+        .gm-item .count { flex-shrink: 0; min-width: 18px; text-align: center; background: #343c4a; border-radius: 4px; padding: 1px 8px; font-size: 12px; font-weight: bold; }
 
         /* ===== Bottom ===== */
         .bottom { flex: 1; display: flex; gap: 20px; min-height: 0; overflow: hidden; }
@@ -173,21 +189,32 @@
         .badge.error { background: rgba(255,82,82,.15); color: #ff8a8a; border-color: rgba(255,82,82,.4); }
         .badge.error .dot { background: var(--red); }
         @keyframes pulse { 50% { opacity: .3; } }
-        .btn-stop { height: 30px; padding: 0 12px; background: rgba(30,30,30,.92); }
-        .btn-stop i { color: var(--red); }
 
         .sidebar {
             width: 295px; flex-shrink: 0; background: var(--panel-2);
             border: 1px solid var(--border); border-radius: 10px; padding: 10px;
             display: flex; flex-direction: column; overflow: hidden; min-height: 0;
+            transition: box-shadow .3s;
         }
-        .search-row { display: flex; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-        .count-box {
-            width: 51px; height: 37px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-            background: var(--field); border: 1px solid var(--border-2); border-radius: 6px;
-            color: var(--green); font-weight: 700; font-size: 14px;
+        .sidebar.flash { box-shadow: 0 0 0 2px var(--green), 0 0 14px rgba(34,197,94,.5); }
+
+        /* رأس مربع القنوات: نوع المعروض (سطر واحد) + تقدم الفحص + أيقونة البحث */
+        .pl-head { padding-bottom: 10px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+        .pl-row { display: flex; align-items: center; gap: 8px; min-height: 37px; }
+        .pl-type {
+            flex: 1; min-width: 0; font-size: 12px; font-weight: 700; color: #e2e8f0; line-height: 1.4;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
-        #searchInput { height: 37px; font-size: 12px; padding: 0 12px; font-family: inherit; }
+        .pl-prog { font-size: 11px; color: #fbbf24; flex-shrink: 0; white-space: nowrap; }
+        .pl-search-btn {
+            width: 37px; height: 37px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+            background: var(--field); border: 1px solid var(--border-2); border-radius: 6px; color: #ccc; cursor: pointer; transition: .2s;
+        }
+        .pl-search-btn:hover { background: #2c2c2c; color: #fff; }
+        .pl-search-btn.active { background: #1a3a24; border-color: var(--green); color: var(--green); }
+        .pl-search-btn svg { width: 16px; height: 16px; }
+        #searchInput { display: none; margin-top: 8px; height: 37px; font-size: 12px; padding: 0 12px; font-family: inherit; }
+
         #parsedList {
             flex: 1; min-height: 0; position: relative; overflow-y: auto; padding-top: 8px;
             display: flex; flex-direction: column; gap: 6px;
@@ -210,6 +237,18 @@
             border-radius: 4px; cursor: pointer; font-size: 11px; transition: background .2s;
         }
         .ch-btns button:hover { background: #4b5563; color: #fff; }
+
+        /* علامة نتيجة الفحص بجانب اسم القناة */
+        .pbadge { display: inline-block; font-size: 10px; font-weight: bold; border-radius: 3px; padding: 0 4px; margin-inline-end: 4px; cursor: help; color: #000; background: #e67e22; }
+        .pb-ok { background: #1dcf60; } .pb-hdrok { background: #3498db; } .pb-hdr { background: #e67e22; }
+        .pb-dead { background: #e74c3c; } .pb-key { background: #f1c40f; } .pb-net, .pb-other { background: #777; }
+
+        #toast {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1dcf60; color: #000;
+            padding: 10px 20px; border-radius: 6px; font-size: 13px; font-weight: bold; opacity: 0;
+            transition: opacity .3s; z-index: 1000; pointer-events: none; box-shadow: 0 4px 10px rgba(0,0,0,.5);
+        }
+        #toast.toast-show { opacity: 1; }
 
         /* شريط تمرير داكن هادئ بدل الأبيض */
         :root { color-scheme: dark; }
@@ -280,17 +319,24 @@
             <!-- 3. الأزرار والفلاتر -->
             <div class="actions">
                 <div class="group">
-                    <button class="btn btn-play" onclick="playSingleLink()">تشغيل القناة المحددة <i class="fa-solid fa-play"></i></button>
+                    <button class="btn btn-play" id="playBtn" onclick="togglePlay()" title="تشغيل القناة المحددة / إيقافها إيقافاً تاماً">تشغيل/إيقاف ▶</button>
                     <button class="btn btn-clear" onclick="clearAll()">مسح الكل <i class="fa-solid fa-trash-can"></i></button>
                     <button class="btn btn-sq" onclick="navigateChannel(-1)" title="القناة السابقة"><i class="fa-solid fa-caret-up"></i></button>
                     <button class="btn btn-sq" onclick="navigateChannel(1)" title="القناة التالية"><i class="fa-solid fa-caret-down"></i></button>
                 </div>
                 <div class="group" style="gap:8px">
-                    <button class="chip all active" data-filter="all" onclick="setFilter('all')">الكل <b id="cntAll">0</b></button>
-                    <button class="chip mpd" data-filter="mpd" onclick="setFilter('mpd')">MPD <b id="cntMpd">0</b></button>
-                    <button class="chip m3u8" data-filter="m3u8" onclick="setFilter('m3u8')">M3U8 <b id="cntM3u8">0</b></button>
-                    <button class="chip ts" data-filter="ts" onclick="setFilter('ts')">TS <b id="cntTs">0</b></button>
-                    <button class="btn btn-copy" onclick="copyAllLines()" title="نسخ جميع أسطر الكود"><i class="fa-regular fa-copy"></i></button>
+                    <!-- الترتيب: الكل ← العدد ونسخ المعروض ← تقسيم القنوات -->
+                    <button class="chip active" id="chipAll" data-filter="all" onclick="setFilter('all')">الكل <b id="cntAll">0</b></button>
+                    <button class="btn btn-copy" id="copyShownBtn" onclick="copyShown()" title="نسخ أكواد القنوات المعروضة في مربع القنوات">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                        <span id="listCount">0</span>
+                    </button>
+                    <div class="group-wrap" id="groupWrap">
+                        <button class="btn btn-split" id="groupBtn" onclick="toggleGroupMenu(event)" title="تقسيم القنوات">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+                        </button>
+                        <div class="group-menu" id="groupMenu" onclick="event.stopPropagation()"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -303,7 +349,6 @@
                         <span id="statusBadge" class="badge"><span class="dot"></span> غير متصل</span>
                         <span id="activeChannelTitle"></span>
                     </div>
-                    <button class="btn btn-stop" onclick="stopPlayer()"><i class="fa-solid fa-stop"></i> إيقاف</button>
                 </div>
                 <div id="playerContainer">
                     <div id="jwplayerDiv" style="width:100%;height:100%;"></div>
@@ -311,15 +356,23 @@
             </div>
 
             <!-- القنوات المستخرجة -->
-            <aside class="sidebar">
-                <div class="search-row">
-                    <div class="count-box" id="parsedCount">0</div>
-                    <input type="text" id="searchInput" placeholder="بحث عن قناة..." oninput="renderList()">
+            <aside class="sidebar" id="sidebar">
+                <div class="pl-head">
+                    <div class="pl-row">
+                        <span class="pl-type" id="shownType"></span>
+                        <span class="pl-prog" id="probeProg"></span>
+                        <button class="pl-search-btn" id="searchBtn" onclick="toggleSearch()" title="بحث عن قناة">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        </button>
+                    </div>
+                    <input type="text" id="searchInput" placeholder="بحث عن قناة..." oninput="renderList()" onkeydown="if(event.key==='Escape')toggleSearch(false)">
                 </div>
                 <div id="parsedList"><div class="empty">لم يتم استخراج قنوات بعد</div></div>
             </aside>
         </div>
     </div>
+
+    <div id="toast">تم النسخ بنجاح</div>
 
     <script>
         let currentPlayer = null;
@@ -329,6 +382,8 @@
         let customUA = document.getElementById('uaInput').value;
         let activeChannelIndex = -1;
         let currentFilter = 'all';
+        let isPlaying = false;
+        const $ = id => document.getElementById(id);
 
         document.getElementById('uaInput').addEventListener('input', (e) => {
             customUA = e.target.value.trim();
@@ -349,37 +404,55 @@
             };
         })();
 
+        function showToast(msg) {
+            const t = $('toast');
+            t.innerText = msg; t.classList.add('toast-show');
+            clearTimeout(showToast._t);
+            showToast._t = setTimeout(() => t.classList.remove('toast-show'), 2600);
+        }
+
+        /* زر التشغيل/الإيقاف يتبع حالة المشغل: ⏹ أثناء التحميل والتشغيل، ▶ في غير ذلك */
+        function syncPlayBtn(state) {
+            isPlaying = (state === 'playing' || state === 'loading');
+            $('playBtn').textContent = isPlaying ? 'تشغيل/إيقاف ⏹' : 'تشغيل/إيقاف ▶';
+        }
+
         function setStatus(text, state) {
-            const el = document.getElementById('statusBadge');
+            const el = $('statusBadge');
             el.className = 'badge ' + (state || '');
             el.innerHTML = `<span class="dot"></span> ${text}`;
+            syncPlayBtn(state);
         }
 
         function setTitle(text) {
-            const el = document.getElementById('activeChannelTitle');
+            const el = $('activeChannelTitle');
             el.style.opacity = 0;
             setTimeout(() => { el.innerText = text; el.style.opacity = 1; }, 120);
         }
 
         function copyToClipboard(text, e = null) {
             if (e) e.stopPropagation();
-            navigator.clipboard.writeText(text);
+            return navigator.clipboard.writeText(text)
+                .then(() => showToast('تم النسخ بنجاح ✓'))
+                .catch(() => showToast('تعذّر النسخ'));
+        }
+
+        function codeLine(ch) {
+            return `{ id: "${ch.name}", name: "${ch.name}", url: "${ch.url}", k1: "${ch.k1}", k2: "${ch.k2}" }`;
         }
 
         function copyCodeLine(index, e) {
             e.stopPropagation();
-            const ch = window.extractedChannelsList[index];
-            const codeStr = `{ id: "${ch.name}", name: "${ch.name}", url: "${ch.url}", k1: "${ch.k1}", k2: "${ch.k2}" }`;
-            copyToClipboard(codeStr);
+            copyToClipboard(codeLine(window.extractedChannelsList[index]));
         }
 
-        function copyAllLines() {
-            if (!window.extractedChannelsList || window.extractedChannelsList.length === 0) return;
-            let textToCopy = window.extractedChannelsList.map((ch) =>
-                `{ id: "${ch.name}", name: "${ch.name}", url: "${ch.url}", k1: "${ch.k1}", k2: "${ch.k2}" }`
-            ).join(',\n');
-            copyToClipboard(textToCopy);
-            alert("تم نسخ أسطر الكود بنجاح!");
+        /* نسخ أكواد القنوات المعروضة حالياً في مربع القنوات فقط (بعد المجموعة والبحث) */
+        function copyShown() {
+            const list = getVisibleIndices().map(i => window.extractedChannelsList[i]);
+            if (!list.length) { showToast('لا توجد قنوات لنسخها!'); return; }
+            navigator.clipboard.writeText(list.map(codeLine).join(',\n'))
+                .then(() => showToast(`تم نسخ ${list.length} قناة ✓`))
+                .catch(() => showToast('تعذّر النسخ'));
         }
 
         /* ===== التشغيل: نفس المشغل يُعاد استخدامه عند التبديل (بدون وميض) ===== */
@@ -484,23 +557,29 @@
             }
         }
 
+        /* إيقاف تام: يدمّر المشغّل ويقطع التحميل، وتُرفع علامة القناة النشطة (الرابط والمفاتيح تبقى في الخانات) */
         function stopPlayer() {
             clearTimeout(playTimer);
             destroyJW();
             destroyShaka();
+            activeChannelIndex = -1;
+            updateActiveChannelStyle();
             setStatus('متوقف', 'idle');
             document.getElementById('activeChannelTitle').innerText = '';
         }
 
-        function playSingleLink() {
-            activeChannelIndex = -1;
-            updateActiveChannelStyle();
+        function togglePlay() { isPlaying ? stopPlayer() : playSingleLink(); }
 
+        function playSingleLink() {
             const url = document.getElementById('singleUrl').value.trim();
             const k1 = document.getElementById('singleK1').value.trim();
             const k2 = document.getElementById('singleK2').value.trim();
-            const known = window.extractedChannelsList.find(c => c.url === url && c.k1 === k1);
-            playStream('اختبار سريّع', url, k1, k2, known ? known.allKeys : null);
+            const idx = window.extractedChannelsList.findIndex(c => c.url === url && c.k1 === k1);
+            const known = idx > -1 ? window.extractedChannelsList[idx] : null;
+
+            activeChannelIndex = idx;          // يعيد تظليل القناة إن كانت من القائمة المستخرجة
+            updateActiveChannelStyle();
+            playStream(known ? known.name : 'اختبار سريّع', url, k1, k2, known ? known.allKeys : null);
         }
 
         function playParsedChannel(index, alignTop = false) {
@@ -522,12 +601,13 @@
         }
 
         /* تظليل القناة النشطة — القائمة نفسها لا تتحرك إلا إذا خرجت القناة من مجال الرؤية */
-        function updateActiveChannelStyle(alignTop = false) {
+        function updateActiveChannelStyle(alignTop = false, noScroll = false) {
             document.querySelectorAll('.channel-card').forEach(el => el.classList.remove('active'));
             if (activeChannelIndex === -1) return;
             const card = document.getElementById(`channelCard_${activeChannelIndex}`);
             if (!card) return;
             card.classList.add('active');
+            if (noScroll) return;
 
             const list = document.getElementById('parsedList');
             const top = card.offsetTop - 8;
@@ -543,7 +623,7 @@
             }
         }
 
-        /* ===== الفلاتر والبحث والتنقل ===== */
+        /* ===== الصيغ ===== */
         function getType(url) {
             const low = (url || '').toLowerCase();
             const clean = low.split('?')[0];
@@ -557,27 +637,182 @@
         }
 
         function updateCounts() {
-            const list = window.extractedChannelsList;
-            const c = { mpd: 0, m3u8: 0, ts: 0 };
-            list.forEach(ch => { const t = getType(ch.url); if (c[t] !== undefined) c[t]++; });
-            document.getElementById('cntAll').innerText = list.length;
-            document.getElementById('cntMpd').innerText = c.mpd;
-            document.getElementById('cntM3u8').innerText = c.m3u8;
-            document.getElementById('cntTs').innerText = c.ts;
-            document.getElementById('parsedCount').innerText = list.length;
+            $('cntAll').innerText = window.extractedChannelsList.length;
         }
 
+        /* ================================================================
+           الفحص الفعلي للقنوات (مرحلتان، كل مرحلة بمعزل تام عن الأخرى):
+           1) بدون هيدرز: داخل iframe مخفي له fetch/XHR خاصان به، فلا يمسّهما تعديل الـ User-Agent في الصفحة
+           2) بهيدرز: فقط للقنوات المرفوضة في المرحلة 1، بنفس مسار التشغيل العادي (يحمل الـ User-Agent المضبوط في الإعدادات)
+           ok = تشتغل بدون هيدرز | hdrok = تشتغل بهيدرز | hdr = مرفوضة حتى مع الهيدرز
+           dead = ميتة | key = خطأ شفرة | net/other = مهلة أو غير معروف
+           ================================================================ */
+        const ICONS = { ok: '✅', hdrok: '🔓', hdr: '🌐', dead: '❌', key: '⚠', net: '❓', other: '❓' };
+
+        function classifyError(e) {
+            const code = e && e.code, status = e && e.data && e.data[1];
+            if (code === 1001) {
+                if ([401, 403, 407].includes(status)) return { s: 'hdr', msg: `🌐 مرفوضة HTTP ${status}: تحتاج User-Agent/Referer غالباً` };
+                return { s: 'dead', msg: `❌ HTTP ${status}: الرابط ميت أو منتهي` };
+            }
+            if (code >= 6000 && code < 7000) return { s: 'key', msg: `⚠ خطأ DRM/شفرة (${code})` };
+            if (code === 1002) return { s: 'hdr', msg: '🌐 فشل شبكة (غالباً 403 مخفي بسبب CORS): تحتاج UA/Referer غالباً، أو الرابط ميت' };
+            if (code === 1003) return { s: 'net', msg: '❓ انتهت المهلة: بطيئة أو ميتة' };
+            return { s: 'other', msg: '❓ خطأ ' + (code || (e && e.message) || '') };
+        }
+
+        async function runProbe(S, doc, ch, timeout = 12000) {
+            let p, timer, late = null;
+            try {
+                const v = doc.createElement('video'); v.muted = true;
+                p = new S.Player(v);
+                p.addEventListener('error', ev => { late = late || ev.detail; });
+                if (Object.keys(ch.allKeys || {}).length) p.configure({ drm: { clearKeys: ch.allKeys } });
+                await Promise.race([p.load(ch.url), new Promise((_, rej) => { timer = setTimeout(() => rej({ code: 1003 }), timeout); })]);
+                clearTimeout(timer);
+                await new Promise(r => setTimeout(r, 3500));          // ننتظر أخطاء تحميل أول المقاطع
+                if (late) throw late;
+                return { s: 'ok', msg: '✅ تعمل' };
+            } catch (e) { clearTimeout(timer); return classifyError(e); }
+            finally { try { if (p) await p.destroy(); } catch (e) {} }
+        }
+
+        /* iframe مخفي بمشغّل Shaka مستقل = شبكة نظيفة بلا أي هيدرز مضافة */
+        let probeFramePromise = null;
+        function getProbeFrame() {
+            if (probeFramePromise) return probeFramePromise;
+            probeFramePromise = new Promise(resolve => {
+                const srcEl = document.querySelector('script[src*="shaka"]');
+                const src = srcEl ? srcEl.src : 'https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.3.5/shaka-player.compiled.js';
+                const f = document.createElement('iframe');
+                f.setAttribute('aria-hidden', 'true'); f.tabIndex = -1;
+                f.style.cssText = 'position:fixed;left:-9999px;top:0;width:2px;height:2px;border:0;opacity:0;pointer-events:none';
+                let done = false;
+                const fin = () => { if (!done) { done = true; resolve(f); } };
+                f.onload = fin; setTimeout(fin, 20000);
+                f.srcdoc = '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="referrer" content="no-referrer"></head><body><script src="' + src + '"><\/script></body></html>';
+                document.body.appendChild(f);
+            });
+            return probeFramePromise;
+        }
+
+        async function probeWithoutHeaders(ch, frame) {
+            const w = frame && frame.contentWindow;
+            if (!w || !w.shaka) return { s: 'other', msg: '❓ تعذّر تحميل مشغّل الفحص' };
+            try { if (!w.__polyDone) { w.shaka.polyfill.installAll(); w.__polyDone = true; } } catch (e) {}
+            return runProbe(w.shaka, frame.contentDocument, ch);
+        }
+
+        async function probeWithHeaders(ch) {
+            try { shaka.polyfill.installAll(); } catch (e) {}
+            return runProbe(shaka, document, ch);
+        }
+
+        let probeToken = 0;
+        async function probeAll() {
+            const token = ++probeToken;                 // أي استخراج جديد أو مسح يلغي الفحص القديم
+            const list = window.extractedChannelsList.slice(), queue = list.slice();
+            const prog = $('probeProg');
+            let done = 0;
+            prog.textContent = `فحص 0/${list.length}`;
+            let frame = null;
+            try { frame = await getProbeFrame(); } catch (e) {}
+
+            const worker = async () => {
+                while (queue.length && token === probeToken) {
+                    const ch = queue.shift();
+                    let r = await probeWithoutHeaders(ch, frame);
+                    if (token !== probeToken) return;
+                    if (r.s === 'hdr') {                // مرفوضة بدون هيدرز: نجرّبها بالهيدرز قبل تصنيفها نهائياً
+                        const r2 = await probeWithHeaders(ch);
+                        if (token !== probeToken) return;
+                        r = r2.s === 'ok'
+                            ? { s: 'hdrok', msg: '🔓 تشتغل بهيدرز (User-Agent المضبوط في الإعدادات)' }
+                            : { s: 'hdr', msg: r.msg + ' — وما زالت مرفوضة حتى مع الهيدرز' };
+                    }
+                    ch.probe = r;
+                    done++; prog.textContent = `فحص ${done}/${list.length}`;
+                    if (done % 4 === 0) renderList(true);
+                }
+            };
+            await Promise.all([worker(), worker(), worker(), worker(), worker()]);
+            if (token !== probeToken) { return; }
+            prog.textContent = ''; renderList(true);
+            const c = k => list.filter(x => x.probe && x.probe.s === k).length;
+            showToast(`انتهى الفحص: ✅ ${c('ok')} | 🔓 ${c('hdrok')} | 🌐 ${c('hdr')} | ❌ ${c('dead')} | ⚠ ${c('key')} | ❓ ${c('net') + c('other')}`);
+        }
+
+        /* ===== مجموعات تقسيم القنوات (كل قناة تنتمي لمجموعة واحدة فقط داخل كل قسم) ===== */
+        const pr_ = c => c.probe && c.probe.s;
+        const GROUPS = {
+            mpd:   { label: 'MPD',          test: c => getType(c.url) === 'mpd' },
+            m3u8:  { label: 'M3U8',         test: c => getType(c.url) === 'm3u8' },
+            extra: { label: 'صيغ إضافية',   hint: 'TS وغيرها', test: c => ['ts', 'other'].includes(getType(c.url)) },
+            bad:   { label: 'قنوات معطّلة', hint: 'ميتة / شفرة خاطئة', test: c => ['dead', 'key'].includes(pr_(c)) },
+            ok:    { label: '✅ تشتغل بدون هيدرز', test: c => pr_(c) === 'ok' },
+            hdrok: { label: '🔓 تشتغل بهيدرز', hint: 'User-Agent', test: c => pr_(c) === 'hdrok' },
+            hdr:   { label: '🌐 مرفوضة (401 / 403) أو فشل شبكة', hint: 'حتى مع الهيدرز', test: c => pr_(c) === 'hdr' },
+            dead:  { label: '❌ الرابط ميت', test: c => pr_(c) === 'dead' },
+            key:   { label: '⚠ خطأ في الشفرة', test: c => pr_(c) === 'key' },
+            net:   { label: '❓ انتهت المهلة', test: c => ['net', 'other'].includes(pr_(c)) }
+        };
+        const SECTIONS = [
+            { title: 'حسب الصيغة', items: ['mpd', 'm3u8', 'extra', 'bad'] },
+            { title: 'حسب نتيجة الفحص', items: ['ok', 'hdrok', 'hdr', 'dead', 'key', 'net'] }
+        ];
+
+        function renderGroupMenu() {
+            const menu = $('groupMenu'), sc = menu.scrollTop;
+            const list = window.extractedChannelsList;
+            menu.innerHTML = SECTIONS.map(sec => `<div class="gm-title">${sec.title}</div>` + sec.items.map(g => {
+                const G = GROUPS[g], n = list.filter(G.test).length;
+                const hint = G.hint && !/[✅🔓🌐❌⚠❓]/.test(G.label) ? ` <small style="color:#777">(${G.hint})</small>` : '';
+                return `<div class="gm-item${currentFilter === g ? ' sel' : ''}" onclick="applyGroupFilter('${g}')" title="عرض قنوات هذه المجموعة في قائمة القنوات">
+                    <span class="gm-label">${G.label}${hint}</span><span class="count">${n}</span></div>`;
+            }).join('')).join('');
+            menu.scrollTop = sc;
+        }
+
+        function placeGroupMenu() {
+            const m = $('groupMenu'), sb = $('sidebar');
+            sb.scrollIntoView({ block: 'nearest' });                       // على الموبايل: يظهر مربع القنوات أولاً
+            const r = sb.getBoundingClientRect();
+            const top = Math.max(8, r.top), bottom = Math.min(window.innerHeight - 8, r.bottom);
+            m.style.left = r.left + 'px'; m.style.width = r.width + 'px';  // فوق مربع القنوات بالضبط
+            m.style.top = top + 'px'; m.style.maxHeight = Math.max(160, bottom - top) + 'px';
+        }
+
+        function toggleGroupMenu(e) {
+            e.stopPropagation();
+            const m = $('groupMenu');
+            if (m.classList.toggle('open')) { renderGroupMenu(); placeGroupMenu(); }
+        }
+
+        function applyGroupFilter(g) {
+            $('groupMenu').classList.remove('open');
+            setFilter(g);
+            const sb = $('sidebar');
+            $('parsedList').scrollTop = 0;
+            sb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            sb.classList.add('flash'); setTimeout(() => sb.classList.remove('flash'), 900);
+        }
+
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') $('groupMenu').classList.remove('open'); });
+        window.addEventListener('resize', () => $('groupMenu').classList.remove('open'));
+        document.addEventListener('click', () => $('groupMenu').classList.remove('open'));
+
+        /* ===== الفلاتر والبحث والتنقل ===== */
         function setFilter(type) {
-            currentFilter = type;
-            document.querySelectorAll('.chip').forEach(b => b.classList.toggle('active', b.dataset.filter === type));
+            currentFilter = (type !== 'all' && GROUPS[type]) ? type : 'all';
             renderList();
         }
 
         function getVisibleIndices() {
-            const q = document.getElementById('searchInput').value.trim().toLowerCase();
+            const q = $('searchInput').value.trim().toLowerCase();
+            const g = currentFilter !== 'all' ? GROUPS[currentFilter] : null;
             const out = [];
             window.extractedChannelsList.forEach((ch, i) => {
-                if (currentFilter !== 'all' && getType(ch.url) !== currentFilter) return;
+                if (g && !g.test(ch)) return;
                 if (q && !ch.name.toLowerCase().includes(q)) return;
                 out.push(i);
             });
@@ -593,29 +828,50 @@
             playParsedChannel(vis[pos], true);
         }
 
-        function renderList() {
-            const listContainer = document.getElementById('parsedList');
+        function toggleSearch(force) {
+            const inp = $('searchInput'), btn = $('searchBtn');
+            const open = force !== undefined ? force : inp.style.display !== 'block';
+            inp.style.display = open ? 'block' : 'none';
+            btn.classList.toggle('active', open);
+            if (open) inp.focus(); else if (inp.value) { inp.value = ''; renderList(); }
+        }
+
+        function renderList(noScroll = false) {
+            const listContainer = $('parsedList');
+            const all = window.extractedChannelsList;
+            const isGroup = currentFilter !== 'all' && !!GROUPS[currentFilter];
+
+            // الأزرار: الأخضر لما هو معروض فقط
+            $('chipAll').classList.toggle('active', !isGroup);
+            $('groupBtn').classList.toggle('active', isGroup);
+            // سطر نوع المعروض (فاضي لو مفيش قنوات)
+            const typeEl = $('shownType');
+            typeEl.textContent = !all.length ? '' : (isGroup ? GROUPS[currentFilter].label : 'الكل');
+            typeEl.title = typeEl.textContent;
+            renderGroupMenu();
+
+            const vis = getVisibleIndices();
+            $('listCount').innerText = vis.length;
             listContainer.innerHTML = '';
 
-            if (window.extractedChannelsList.length === 0) {
+            if (all.length === 0) {
                 listContainer.innerHTML = '<div class="empty">لم يتم استخراج قنوات بعد</div>';
                 return;
             }
-
-            const vis = getVisibleIndices();
             if (vis.length === 0) {
                 listContainer.innerHTML = '<div class="empty">لا توجد نتائج مطابقة</div>';
                 return;
             }
 
             vis.forEach(index => {
-                const ch = window.extractedChannelsList[index];
+                const ch = all[index];
                 const card = document.createElement('div');
                 card.id = `channelCard_${index}`;
                 card.className = "channel-card";
                 const hasDRM = ch.k1 && ch.k2;
                 const type = getType(ch.url);
-                card.title = `${hasDRM ? 'DRM' : 'Free'} • ${type === 'other' ? 'LINK' : type.toUpperCase()}`;
+                const pr = ch.probe;
+                card.title = `${hasDRM ? 'DRM' : 'Free'} • ${type === 'other' ? 'LINK' : type.toUpperCase()}` + (pr ? `\n${pr.msg}` : '');
 
                 card.innerHTML = `
                     <div class="ch-name"></div>
@@ -624,13 +880,19 @@
                         <button title="نسخ سطر الكود" data-act="code"><i class="fa-solid fa-code"></i></button>
                     </div>
                 `;
-                card.querySelector('.ch-name').textContent = `${index + 1}. ${ch.name}`;
+                const nameEl = card.querySelector('.ch-name');
+                if (pr) {
+                    const b = document.createElement('span');
+                    b.className = 'pbadge pb-' + pr.s; b.textContent = ICONS[pr.s] || '❓'; b.title = pr.msg;
+                    nameEl.appendChild(b);
+                }
+                nameEl.appendChild(document.createTextNode(`${index + 1}. ${ch.name}`));
                 card.addEventListener('click', () => playParsedChannel(index));
                 card.querySelector('[data-act="link"]').addEventListener('click', (e) => copyToClipboard(ch.url, e));
                 card.querySelector('[data-act="code"]').addEventListener('click', (e) => copyCodeLine(index, e));
                 listContainer.appendChild(card);
             });
-            updateActiveChannelStyle();
+            updateActiveChannelStyle(false, noScroll);
         }
 
         /* ===== المحلل الذكي: يستخرج الاسم والرابط والشفرات مهما كان الشكل أو الترتيب ===== */
@@ -1007,22 +1269,33 @@ function parseInputText(text) {
             const rawText = document.getElementById('bulkInput').value;
             if (!rawText.trim()) return;
 
+            probeToken++;                                   // يلغي أي فحص جارٍ للقائمة السابقة
+            $('probeProg').textContent = '';
             window.extractedChannelsList = parseInputText(rawText);
-            if (window.extractedChannelsList.length === 0) return;
 
             activeChannelIndex = -1;
-            document.getElementById('searchInput').value = '';
+            toggleSearch(false);
             updateCounts();
             setFilter('all');
+
+            if (window.extractedChannelsList.length === 0) {
+                showToast('لم يتم العثور على قنوات صالحة!');
+                return;
+            }
+            showToast(`تم استخراج ${window.extractedChannelsList.length} قناة`);
+            probeAll();                                     // الفحص التلقائي: بدون هيدرز ثم بهيدرز للمرفوضة
         }
 
         function clearAll() {
             stopPlayer();
+            probeToken++;                                   // يلغي الفحص الجاري
+            $('probeProg').textContent = '';
             document.getElementById('singleUrl').value = '';
             document.getElementById('singleK1').value = '';
             document.getElementById('singleK2').value = '';
             document.getElementById('bulkInput').value = '';
             document.getElementById('searchInput').value = '';
+            toggleSearch(false);
 
             window.extractedChannelsList = [];
             activeChannelIndex = -1;

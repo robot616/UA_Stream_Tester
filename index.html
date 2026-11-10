@@ -120,7 +120,6 @@
         .btn-clear:hover { background: #ff6b6b; }
         .btn-sq { width: 42px; font-size: 10px; }
 
-        /* "الكل": رمادي افتراضياً، أخضر فقط عندما يكون هو المعروض */
         .chip {
             height: 36px; padding: 0 10px; border-radius: 6px; background: transparent;
             border: 1px solid var(--border-2); color: #ccc; cursor: pointer; font-size: 12px; font-weight: 700;
@@ -134,11 +133,9 @@
         .chip.active { color: var(--green); border-color: var(--green); opacity: 1; box-shadow: 0 0 0 1px var(--green) inset; }
         .chip.active b { background: var(--green); color: #04130a; }
 
-        /* العدد + نسخ أكواد القنوات المعروضة */
         .btn-copy { height: 36px; padding: 0 12px; background: #374151; font-size: 13px; }
         .btn-copy svg { width: 15px; height: 15px; }
 
-        /* تقسيم القنوات: رمادي، أخضر فقط عند اختيار مجموعة */
         .group-wrap { position: relative; display: flex; align-items: center; }
         .btn-split { width: 42px; height: 36px; color: #ccc; }
         .btn-split svg { width: 20px; height: 20px; }
@@ -198,7 +195,6 @@
         }
         .sidebar.flash { box-shadow: 0 0 0 2px var(--green), 0 0 14px rgba(34,197,94,.5); }
 
-        /* رأس مربع القنوات: نوع المعروض (سطر واحد) + تقدم الفحص + أيقونة البحث */
         .pl-head { padding-bottom: 10px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
         .pl-row { display: flex; align-items: center; gap: 8px; min-height: 37px; }
         .pl-type {
@@ -240,7 +236,7 @@
 
         /* علامة نتيجة الفحص بجانب اسم القناة */
         .pbadge { display: inline-block; font-size: 10px; font-weight: bold; border-radius: 3px; padding: 0 4px; margin-inline-end: 4px; cursor: help; color: #000; background: #e67e22; }
-        .pb-ok { background: #1dcf60; } .pb-hdrok { background: #3498db; } .pb-hdr { background: #e67e22; }
+        .pb-ok { background: #1dcf60; } .pb-jwok { background: #2dd4bf; } .pb-hdrok { background: #3498db; } .pb-hdr { background: #e67e22; }
         .pb-dead { background: #e74c3c; } .pb-key { background: #f1c40f; } .pb-net, .pb-other { background: #777; }
 
         #toast {
@@ -250,7 +246,6 @@
         }
         #toast.toast-show { opacity: 1; }
 
-        /* شريط تمرير داكن هادئ بدل الأبيض */
         :root { color-scheme: dark; }
         * { scrollbar-width: thin; scrollbar-color: #454545 transparent; }
         ::-webkit-scrollbar { width: 8px; height: 8px; }
@@ -259,7 +254,7 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-corner { background: transparent; }
 
-        /* ===== JW Player tweaks (من الكود الأصلي) ===== */
+        /* ===== JW Player tweaks ===== */
         .jw-icon-playlist, .jw-icon-next, .jw-related-btn { display: none !important; }
         .jw-icon-fullscreen svg { display: none !important; }
         .jw-icon-fullscreen {
@@ -299,13 +294,11 @@
     <div class="wrap">
 
         <div class="card">
-            <!-- 1. استخراج الأكواد والقوائم -->
             <textarea id="bulkInput" placeholder="الصق محتوى الملف بالكامل هنا..."></textarea>
             <button class="btn-extract" onclick="parseAndLoadChannels()">
                 استخراج وفصل القنوات تلقائياً <i class="fa-solid fa-wand-magic-sparkles"></i>
             </button>
 
-            <!-- 2. الإدخال السريع -->
             <div class="fields">
                 <input type="text" id="singleUrl" placeholder="رابط القناة (URL)">
                 <input type="text" id="singleK1" placeholder="Key ID (k1)">
@@ -316,7 +309,6 @@
                 </select>
             </div>
 
-            <!-- 3. الأزرار والفلاتر -->
             <div class="actions">
                 <div class="group">
                     <button class="btn btn-play" id="playBtn" onclick="togglePlay()" title="تشغيل القناة المحددة / إيقافها إيقافاً تاماً">تشغيل/إيقاف ▶</button>
@@ -325,7 +317,6 @@
                     <button class="btn btn-sq" onclick="navigateChannel(1)" title="القناة التالية"><i class="fa-solid fa-caret-down"></i></button>
                 </div>
                 <div class="group" style="gap:8px">
-                    <!-- الترتيب: الكل ← العدد ونسخ المعروض ← تقسيم القنوات -->
                     <button class="chip active" id="chipAll" data-filter="all" onclick="setFilter('all')">الكل <b id="cntAll">0</b></button>
                     <button class="btn btn-copy" id="copyShownBtn" onclick="copyShown()" title="نسخ أكواد القنوات المعروضة في مربع القنوات">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
@@ -342,7 +333,6 @@
         </div>
 
         <div class="bottom">
-            <!-- المشغل -->
             <div class="player-box">
                 <div class="overlay">
                     <div class="overlay-start">
@@ -355,7 +345,6 @@
                 </div>
             </div>
 
-            <!-- القنوات المستخرجة -->
             <aside class="sidebar" id="sidebar">
                 <div class="pl-head">
                     <div class="pl-row">
@@ -411,7 +400,7 @@
             showToast._t = setTimeout(() => t.classList.remove('toast-show'), 2600);
         }
 
-        /* زر التشغيل/الإيقاف يتبع حالة المشغل: ⏹ أثناء التحميل والتشغيل، ▶ في غير ذلك */
+        /* زر التشغيل/الإيقاف يتبع حالة المشغل */
         function syncPlayBtn(state) {
             isPlaying = (state === 'playing' || state === 'loading');
             $('playBtn').textContent = isPlaying ? 'تشغيل/إيقاف ⏹' : 'تشغيل/إيقاف ▶';
@@ -446,7 +435,7 @@
             copyToClipboard(codeLine(window.extractedChannelsList[index]));
         }
 
-        /* نسخ أكواد القنوات المعروضة حالياً في مربع القنوات فقط (بعد المجموعة والبحث) */
+        /* نسخ أكواد القنوات المعروضة حالياً فقط (بعد المجموعة والبحث) */
         function copyShown() {
             const list = getVisibleIndices().map(i => window.extractedChannelsList[i]);
             if (!list.length) { showToast('لا توجد قنوات لنسخها!'); return; }
@@ -455,7 +444,16 @@
                 .catch(() => showToast('تعذّر النسخ'));
         }
 
-        /* ===== التشغيل: نفس المشغل يُعاد استخدامه عند التبديل (بدون وميض) ===== */
+        /* إن اشتغلت قناة مصنّفة معطّلة فعلياً على JW نصحّح تصنيفها فوراً */
+        function markPlayableFromJW() {
+            const ch = window.extractedChannelsList[activeChannelIndex];
+            if (!ch || !ch.probe) return;
+            if (['ok', 'jwok', 'hdrok'].includes(ch.probe.s)) return;
+            ch.probe = { s: 'jwok', msg: '🎯 اشتغلت فعلياً على JW (صُحّح تصنيفها تلقائياً)' };
+            renderList(true);
+        }
+
+        /* ===== التشغيل: نفس المشغل يُعاد استخدامه عند التبديل ===== */
         function setupJW(item) {
             currentPlayer = jwplayer("jwplayerDiv").setup({
                 playlist: [item],
@@ -484,6 +482,7 @@
             });
 
             currentPlayer.on('play', () => setStatus('يعمل الآن', 'playing'));
+            currentPlayer.on('firstFrame', markPlayableFromJW);
             currentPlayer.on('buffer', () => setStatus('جاري التحميل...', 'loading'));
 
             currentPlayer.on('audioTracks', function() {
@@ -516,7 +515,6 @@
             if (k1 && k2) item.drm = { clearkey: { keyId: k1, key: k2 } };
 
             if (currentPlayer) {
-                // تبديل سلس: نفس المشغل، بدون إزالة أو إعادة بناء
                 currentPlayer.load([item]);
                 currentPlayer.play(true);
             } else {
@@ -541,6 +539,7 @@
                 shakaPlayer.configure({ drm: { clearKeys: keys } });
                 await shakaPlayer.load(url);
                 setStatus('يعمل الآن', 'playing');
+                markPlayableFromJW();
             } catch (err) {
                 setStatus('فشل التشغيل', 'error');
             }
@@ -557,7 +556,7 @@
             }
         }
 
-        /* إيقاف تام: يدمّر المشغّل ويقطع التحميل، وتُرفع علامة القناة النشطة (الرابط والمفاتيح تبقى في الخانات) */
+        /* إيقاف تام */
         function stopPlayer() {
             clearTimeout(playTimer);
             destroyJW();
@@ -577,7 +576,7 @@
             const idx = window.extractedChannelsList.findIndex(c => c.url === url && c.k1 === k1);
             const known = idx > -1 ? window.extractedChannelsList[idx] : null;
 
-            activeChannelIndex = idx;          // يعيد تظليل القناة إن كانت من القائمة المستخرجة
+            activeChannelIndex = idx;
             updateActiveChannelStyle();
             playStream(known ? known.name : 'اختبار سريّع', url, k1, k2, known ? known.allKeys : null);
         }
@@ -588,19 +587,16 @@
 
             const ch = window.extractedChannelsList[index];
             if (ch) {
-                // تعبئة البيانات المستخرجة تلقائياً في مربع الإدخال السريع لمعاينتها
                 document.getElementById('singleUrl').value = ch.url || '';
                 document.getElementById('singleK1').value = ch.k1 || '';
                 document.getElementById('singleK2').value = ch.k2 || '';
 
-                // تأخير بسيط: عند الضغط السريع على التالي/السابق تُحمّل آخر قناة فقط
                 clearTimeout(playTimer);
                 setStatus('جاري التحميل...', 'loading');
                 playTimer = setTimeout(() => playStream(ch.name, ch.url, ch.k1, ch.k2, ch.allKeys), 180);
             }
         }
 
-        /* تظليل القناة النشطة — القائمة نفسها لا تتحرك إلا إذا خرجت القناة من مجال الرؤية */
         function updateActiveChannelStyle(alignTop = false, noScroll = false) {
             document.querySelectorAll('.channel-card').forEach(el => el.classList.remove('active'));
             if (activeChannelIndex === -1) return;
@@ -613,8 +609,6 @@
             const top = card.offsetTop - 8;
             const bottom = card.offsetTop + card.offsetHeight + 8;
             if (alignTop) {
-                // التنقل بالأزرار: القناة المختارة تثبت عند أول مربع والقائمة هي التي تتحرك
-                // (المتصفح يوقف التمرير تلقائياً عند آخر القائمة فيتحرك التظليل لأسفل)
                 list.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
             } else if (top < list.scrollTop) {
                 list.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
@@ -641,13 +635,16 @@
         }
 
         /* ================================================================
-           الفحص الفعلي للقنوات (مرحلتان، كل مرحلة بمعزل تام عن الأخرى):
-           1) بدون هيدرز: داخل iframe مخفي له fetch/XHR خاصان به، فلا يمسّهما تعديل الـ User-Agent في الصفحة
-           2) بهيدرز: فقط للقنوات المرفوضة في المرحلة 1، بنفس مسار التشغيل العادي (يحمل الـ User-Agent المضبوط في الإعدادات)
-           ok = تشتغل بدون هيدرز | hdrok = تشتغل بهيدرز | hdr = مرفوضة حتى مع الهيدرز
-           dead = ميتة | key = خطأ شفرة | net/other = مهلة أو غير معروف
+           الفحص الذكي للقنوات — ثلاث مراحل، والحكم النهائي لما يشتغل فعلاً:
+           1) Shaka بدون هيدرز: داخل iframe مخفي بشبكة نظيفة
+           2) Shaka بهيدرز: فقط للمرفوضة/الميتة، بنفس مسار التشغيل العادي (User-Agent المضبوط)
+           3) تأكيد على JW Player (مخفي وصامت): لأي نتيجة غير حاسمة (key / hdr / net / other)،
+              لأن فشل Shaka لوحده (DRM/EME في iframe مخفي، اختلاف التعامل مع الـ manifest) لا يعني أن القناة معطّلة.
+           ok = تشتغل بدون هيدرز | jwok = تشتغل على JW (Shaka فشل) | hdrok = تشتغل بهيدرز
+           hdr = مرفوضة حتى مع الهيدرز وعلى JW | dead = HTTP ميت (حاسم)
+           key = خطأ شفرة مؤكد (فشل Shaka وJW) | net/other = مهلة أو غير معروف
            ================================================================ */
-        const ICONS = { ok: '✅', hdrok: '🔓', hdr: '🌐', dead: '❌', key: '⚠', net: '❓', other: '❓' };
+        const ICONS = { ok: '✅', jwok: '🎯', hdrok: '🔓', hdr: '🌐', dead: '❌', key: '⚠', net: '❓', other: '❓' };
 
         function classifyError(e) {
             const code = e && e.code, status = e && e.data && e.data[1];
@@ -666,7 +663,11 @@
             try {
                 const v = doc.createElement('video'); v.muted = true;
                 p = new S.Player(v);
-                p.addEventListener('error', ev => { late = late || ev.detail; });
+                // نعتبر فقط الأخطاء الحرجة (severity 2)؛ الأخطاء القابلة للتعافي لا تُسقط القناة
+                p.addEventListener('error', ev => {
+                    const d = ev.detail;
+                    if (d && d.severity === 2) late = late || d;
+                });
                 if (Object.keys(ch.allKeys || {}).length) p.configure({ drm: { clearKeys: ch.allKeys } });
                 await Promise.race([p.load(ch.url), new Promise((_, rej) => { timer = setTimeout(() => rej({ code: 1003 }), timeout); })]);
                 clearTimeout(timer);
@@ -685,7 +686,7 @@
                 const srcEl = document.querySelector('script[src*="shaka"]');
                 const src = srcEl ? srcEl.src : 'https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.3.5/shaka-player.compiled.js';
                 const f = document.createElement('iframe');
-                f.setAttribute('aria-hidden', 'true'); f.tabIndex = -1;
+                f.setAttribute('aria-hidden', 'true'); f.setAttribute('allow', 'encrypted-media'); f.tabIndex = -1;
                 f.style.cssText = 'position:fixed;left:-9999px;top:0;width:2px;height:2px;border:0;opacity:0;pointer-events:none';
                 let done = false;
                 const fin = () => { if (!done) { done = true; resolve(f); } };
@@ -708,6 +709,61 @@
             return runProbe(shaka, document, ch);
         }
 
+        /* تأكيد على JW Player الحقيقي (مخفي وصامت)، واحدة تلو الأخرى */
+        let jwProbeChain = Promise.resolve();
+        function probeWithJW(ch, timeout = 14000) {
+            const run = () => new Promise(resolve => {
+                const id = 'jwProbe_' + Date.now() + '_' + Math.floor(Math.random() * 1e6);
+                const holder = document.createElement('div');
+                holder.setAttribute('aria-hidden', 'true');
+                holder.style.cssText = 'position:fixed;left:-9999px;top:0;width:320px;height:180px;opacity:0;pointer-events:none';
+                const inner = document.createElement('div'); inner.id = id;
+                holder.appendChild(inner); document.body.appendChild(holder);
+
+                let pl = null, done = false, timer;
+                const finish = res => {
+                    if (done) return; done = true; clearTimeout(timer);
+                    try { if (pl) pl.remove(); } catch (e) {}
+                    holder.remove(); resolve(res);
+                };
+                const item = { file: ch.url };
+                if (ch.k1 && ch.k2) item.drm = { clearkey: { keyId: ch.k1, key: ch.k2 } };
+                try {
+                    pl = jwplayer(id).setup({ playlist: [item], width: 320, height: 180, autostart: true, mute: true });
+                } catch (e) { finish({ ok: false, msg: 'setup' }); return; }
+
+                pl.on('firstFrame', () => finish({ ok: true }));
+                pl.on('time', e => { if (e && e.position > 0) finish({ ok: true }); });
+                pl.on('error', e => finish({ ok: false, msg: (e && (e.message || e.code)) || '' }));
+                pl.on('setupError', e => finish({ ok: false, msg: (e && (e.message || e.code)) || '' }));
+                timer = setTimeout(() => finish({ ok: false, timeout: true }), timeout);
+            });
+            const p = jwProbeChain.then(run, run);
+            jwProbeChain = p.catch(() => {});
+            return p;
+        }
+
+        /* فحص قناة واحدة بتصنيف ذكي */
+        async function probeChannel(ch, frame, token) {
+            let r = await probeWithoutHeaders(ch, frame);
+            if (token !== probeToken) return null;
+
+            if (r.s === 'hdr' || r.s === 'dead') {              // مرفوضة/ميتة بدون هيدرز: نجرّبها بالهيدرز
+                const r2 = await probeWithHeaders(ch);
+                if (token !== probeToken) return null;
+                if (r2.s === 'ok') return { s: 'hdrok', msg: '🔓 تشتغل بهيدرز (User-Agent المضبوط في الإعدادات)' };
+                if (r.s === 'hdr') r.msg += ' — وما زالت مرفوضة حتى مع الهيدرز';
+            }
+
+            if (r.s === 'ok' || r.s === 'dead') return r;       // الحاسم: تعمل، أو HTTP ميت
+
+            // غير حاسم (key / hdr / net / other): فشل Shaka لا يكفي للحكم، نؤكد على JW
+            const j = await probeWithJW(ch);
+            if (token !== probeToken) return null;
+            if (j.ok) return { s: 'jwok', msg: `🎯 تشتغل على JW (فحص Shaka فشل: ${r.msg.replace(/^\S+\s/, '')})` };
+            return { s: r.s, msg: r.msg + (j.timeout ? ' — وانتهت مهلة JW أيضاً' : ' — وتأكد فشلها على JW أيضاً') };
+        }
+
         let probeToken = 0;
         async function probeAll() {
             const token = ++probeToken;                 // أي استخراج جديد أو مسح يلغي الفحص القديم
@@ -721,15 +777,8 @@
             const worker = async () => {
                 while (queue.length && token === probeToken) {
                     const ch = queue.shift();
-                    let r = await probeWithoutHeaders(ch, frame);
-                    if (token !== probeToken) return;
-                    if (r.s === 'hdr') {                // مرفوضة بدون هيدرز: نجرّبها بالهيدرز قبل تصنيفها نهائياً
-                        const r2 = await probeWithHeaders(ch);
-                        if (token !== probeToken) return;
-                        r = r2.s === 'ok'
-                            ? { s: 'hdrok', msg: '🔓 تشتغل بهيدرز (User-Agent المضبوط في الإعدادات)' }
-                            : { s: 'hdr', msg: r.msg + ' — وما زالت مرفوضة حتى مع الهيدرز' };
-                    }
+                    const r = await probeChannel(ch, frame, token);
+                    if (token !== probeToken || !r) return;
                     ch.probe = r;
                     done++; prog.textContent = `فحص ${done}/${list.length}`;
                     if (done % 4 === 0) renderList(true);
@@ -739,17 +788,18 @@
             if (token !== probeToken) { return; }
             prog.textContent = ''; renderList(true);
             const c = k => list.filter(x => x.probe && x.probe.s === k).length;
-            showToast(`انتهى الفحص: ✅ ${c('ok')} | 🔓 ${c('hdrok')} | 🌐 ${c('hdr')} | ❌ ${c('dead')} | ⚠ ${c('key')} | ❓ ${c('net') + c('other')}`);
+            showToast(`انتهى الفحص: ✅ ${c('ok')} | 🎯 ${c('jwok')} | 🔓 ${c('hdrok')} | 🌐 ${c('hdr')} | ❌ ${c('dead')} | ⚠ ${c('key')} | ❓ ${c('net') + c('other')}`);
         }
 
-        /* ===== مجموعات تقسيم القنوات (كل قناة تنتمي لمجموعة واحدة فقط داخل كل قسم) ===== */
+        /* ===== مجموعات تقسيم القنوات ===== */
         const pr_ = c => c.probe && c.probe.s;
         const GROUPS = {
             mpd:   { label: 'MPD',          test: c => getType(c.url) === 'mpd' },
             m3u8:  { label: 'M3U8',         test: c => getType(c.url) === 'm3u8' },
             extra: { label: 'صيغ إضافية',   hint: 'TS وغيرها', test: c => ['ts', 'other'].includes(getType(c.url)) },
-            bad:   { label: 'قنوات معطّلة', hint: 'ميتة / شفرة خاطئة', test: c => ['dead', 'key'].includes(pr_(c)) },
+            bad:   { label: 'قنوات معطّلة', hint: 'ميتة / شفرة خاطئة مؤكدة', test: c => ['dead', 'key'].includes(pr_(c)) },
             ok:    { label: '✅ تشتغل بدون هيدرز', test: c => pr_(c) === 'ok' },
+            jwok:  { label: '🎯 تشتغل على JW فقط', test: c => pr_(c) === 'jwok' },
             hdrok: { label: '🔓 تشتغل بهيدرز', hint: 'User-Agent', test: c => pr_(c) === 'hdrok' },
             hdr:   { label: '🌐 مرفوضة (401 / 403) أو فشل شبكة', hint: 'حتى مع الهيدرز', test: c => pr_(c) === 'hdr' },
             dead:  { label: '❌ الرابط ميت', test: c => pr_(c) === 'dead' },
@@ -758,7 +808,7 @@
         };
         const SECTIONS = [
             { title: 'حسب الصيغة', items: ['mpd', 'm3u8', 'extra', 'bad'] },
-            { title: 'حسب نتيجة الفحص', items: ['ok', 'hdrok', 'hdr', 'dead', 'key', 'net'] }
+            { title: 'حسب نتيجة الفحص', items: ['ok', 'jwok', 'hdrok', 'hdr', 'dead', 'key', 'net'] }
         ];
 
         function renderGroupMenu() {
@@ -766,7 +816,7 @@
             const list = window.extractedChannelsList;
             menu.innerHTML = SECTIONS.map(sec => `<div class="gm-title">${sec.title}</div>` + sec.items.map(g => {
                 const G = GROUPS[g], n = list.filter(G.test).length;
-                const hint = G.hint && !/[✅🔓🌐❌⚠❓]/.test(G.label) ? ` <small style="color:#777">(${G.hint})</small>` : '';
+                const hint = G.hint && !/[✅🎯🔓🌐❌⚠❓]/.test(G.label) ? ` <small style="color:#777">(${G.hint})</small>` : '';
                 return `<div class="gm-item${currentFilter === g ? ' sel' : ''}" onclick="applyGroupFilter('${g}')" title="عرض قنوات هذه المجموعة في قائمة القنوات">
                     <span class="gm-label">${G.label}${hint}</span><span class="count">${n}</span></div>`;
             }).join('')).join('');
@@ -775,10 +825,10 @@
 
         function placeGroupMenu() {
             const m = $('groupMenu'), sb = $('sidebar');
-            sb.scrollIntoView({ block: 'nearest' });                       // على الموبايل: يظهر مربع القنوات أولاً
+            sb.scrollIntoView({ block: 'nearest' });
             const r = sb.getBoundingClientRect();
             const top = Math.max(8, r.top), bottom = Math.min(window.innerHeight - 8, r.bottom);
-            m.style.left = r.left + 'px'; m.style.width = r.width + 'px';  // فوق مربع القنوات بالضبط
+            m.style.left = r.left + 'px'; m.style.width = r.width + 'px';
             m.style.top = top + 'px'; m.style.maxHeight = Math.max(160, bottom - top) + 'px';
         }
 
@@ -841,10 +891,8 @@
             const all = window.extractedChannelsList;
             const isGroup = currentFilter !== 'all' && !!GROUPS[currentFilter];
 
-            // الأزرار: الأخضر لما هو معروض فقط
             $('chipAll').classList.toggle('active', !isGroup);
             $('groupBtn').classList.toggle('active', isGroup);
-            // سطر نوع المعروض (فاضي لو مفيش قنوات)
             const typeEl = $('shownType');
             typeEl.textContent = !all.length ? '' : (isGroup ? GROUPS[currentFilter].label : 'الكل');
             typeEl.title = typeEl.textContent;
@@ -916,7 +964,6 @@ function normalizeText(t) {
         .replace(/\\u002[fF]/g, '/').replace(/\\u0026/g, '&').replace(/\\\//g, '/')
         .replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#0*39;/g, "'")
         .replace(/&lt;/g, '<').replace(/&gt;/g, '>');
-    // نص JSON مغلّف داخل نص (علامات تنصيص مهرّبة)
     if (/\\"(url|file|name|title|keyId|key)\\"/i.test(s)) s = s.replace(/\\"/g, '"');
     return s;
 }
@@ -1195,7 +1242,7 @@ function parseLoose(src, hits, store) {
     const infos = hits.map(h => ({ h, li: lineOf(h.start) }));
     const n = infos.length;
 
-    const gapLines = g => {                       // g = الفجوة بعد الرابط g (‎-1 قبل الأول)
+    const gapLines = g => {
         const from = (g < 0 ? -1 : infos[g].li) + 1;
         const to = (g + 1 < n ? infos[g + 1].li : lines.length);
         return lines.slice(from, to);
@@ -1283,7 +1330,7 @@ function parseInputText(text) {
                 return;
             }
             showToast(`تم استخراج ${window.extractedChannelsList.length} قناة`);
-            probeAll();                                     // الفحص التلقائي: بدون هيدرز ثم بهيدرز للمرفوضة
+            probeAll();                                     // الفحص الذكي التلقائي
         }
 
         function clearAll() {

@@ -8,7 +8,6 @@
 
     <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/3159/3159073.png">
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.3.5/shaka-player.compiled.js"></script>
     <script src="//ssl.p.jwpcdn.com/player/v/8.26.0/jwplayer.js"></script>
     <script>jwplayer.key = "XSuP4qMl+9tK17QNb+4+th2Pm9AWgMO/cYH8CI0HGGr7bdjo";</script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -92,15 +91,14 @@
         .fields { display: flex; gap: 12px; margin-top: 16px; }
         .fields > * { flex: 1; min-width: 0; }
 
-        input[type=text], select {
+        input[type=text] {
             height: 42px; width: 100%; background: var(--field);
             border: 1px solid var(--border-2); border-radius: 6px; color: #fff;
             padding: 0 14px; font-size: 13px; outline: none; transition: border-color .2s;
             font-family: ui-monospace, Consolas, monospace;
         }
-        select { font-family: inherit; cursor: pointer; }
         input[type=text]::placeholder { color: #6b6b6b; font-family: inherit; font-size: 12px; }
-        input[type=text]:focus, select:focus { border-color: var(--green); }
+        input[type=text]:focus { border-color: var(--green); }
 
         /* ===== Actions row ===== */
         .actions { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; gap: 10px; }
@@ -236,7 +234,7 @@
 
         /* علامة نتيجة الفحص بجانب اسم القناة */
         .pbadge { display: inline-block; font-size: 10px; font-weight: bold; border-radius: 3px; padding: 0 4px; margin-inline-end: 4px; cursor: help; color: #000; background: #e67e22; }
-        .pb-ok { background: #1dcf60; } .pb-jwok { background: #2dd4bf; } .pb-hdrok { background: #3498db; } .pb-hdr { background: #e67e22; }
+        .pb-ok { background: #1dcf60; } .pb-hdrok { background: #3498db; } .pb-hdr { background: #e67e22; }
         .pb-dead { background: #e74c3c; } .pb-key { background: #f1c40f; } .pb-net, .pb-other { background: #777; }
 
         #toast {
@@ -262,7 +260,7 @@
             background-size: 16px; background-position: center; background-repeat: no-repeat;
         }
         .jw-flag-fullscreen .jw-icon-fullscreen {
-            background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNOCAzdjNhMiAyIDAgMCAxLTIgMkgzbTE4IDBoLTNhMiAyIDAgMCAxLTItMlYzbTAgMTh2LTNhMiAyIDAgMCAxIDItMmgzTTMgMTZoM2EyIDIgMCAwIDEgMiAydjMiPjwvcGF0aD48L3N2Zz4=');
+            background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2Utam9pbj0icm91bmQiPjxwYXRoIGQ9Ik04IDN2M2EyIDIgMCAwIDEtMiAySDNtMTggMGgtM2EyIDIgMCAwIDEtMi0yVjNtMCAxOHYtM2EyIDIgMCAwIDEgMi0yaDNNMyAxNmgzYTIgMiAwIDAgMSAyIDJ2MyI+PC9wYXRoPjwvc3ZnPg==');
         }
 
         @media (max-width: 760px) {
@@ -303,10 +301,6 @@
                 <input type="text" id="singleUrl" placeholder="رابط القناة (URL)">
                 <input type="text" id="singleK1" placeholder="Key ID (k1)">
                 <input type="text" id="singleK2" placeholder="Key (k2)">
-                <select id="playerType" title="المشغل">
-                    <option value="jw">JW Player (المفضل)</option>
-                    <option value="shaka">Shaka Player</option>
-                </select>
             </div>
 
             <div class="actions">
@@ -364,8 +358,8 @@
     <div id="toast">تم النسخ بنجاح</div>
 
     <script>
+        const JW_KEY = "XSuP4qMl+9tK17QNb+4+th2Pm9AWgMO/cYH8CI0HGGr7bdjo";
         let currentPlayer = null;
-        let shakaPlayer = null;
         let playTimer = null;
         window.extractedChannelsList = [];
         let customUA = document.getElementById('uaInput').value;
@@ -378,6 +372,7 @@
             customUA = e.target.value.trim();
         });
 
+        /* تعديل الـ User-Agent يخصّ هذه الصفحة فقط (المشغّل الرئيسي + فحص "بهيدرز") */
         (function() {
             var originalFetch = window.fetch;
             var originalXHR = window.XMLHttpRequest;
@@ -444,17 +439,24 @@
                 .catch(() => showToast('تعذّر النسخ'));
         }
 
-        /* إن اشتغلت قناة مصنّفة معطّلة فعلياً على JW نصحّح تصنيفها فوراً */
-        function markPlayableFromJW() {
+        /* إن اشتغلت قناة مصنّفة فاشلة فعلياً في المشغّل الرئيسي نصحّح تصنيفها فوراً */
+        function markPlayable() {
             const ch = window.extractedChannelsList[activeChannelIndex];
             if (!ch || !ch.probe) return;
-            if (['ok', 'jwok', 'hdrok'].includes(ch.probe.s)) return;
-            ch.probe = { s: 'jwok', msg: '🎯 اشتغلت فعلياً على JW (صُحّح تصنيفها تلقائياً)' };
+            if (['ok', 'hdrok'].includes(ch.probe.s)) return;
+            ch.probe = { s: 'hdrok', msg: '🔓 اشتغلت فعلياً بهيدرز (صُحّح تصنيفها تلقائياً)' };
             renderList(true);
         }
 
         /* ===== التشغيل: نفس المشغل يُعاد استخدامه عند التبديل ===== */
+        function ensurePlayerDiv() {
+            if (!$('jwplayerDiv')) {
+                $('playerContainer').innerHTML = '<div id="jwplayerDiv" style="width:100%;height:100%;"></div>';
+            }
+        }
+
         function setupJW(item) {
+            ensurePlayerDiv();
             currentPlayer = jwplayer("jwplayerDiv").setup({
                 playlist: [item],
                 width: "100%", height: "100%", autostart: true, stretching: "uniform"
@@ -482,7 +484,7 @@
             });
 
             currentPlayer.on('play', () => setStatus('يعمل الآن', 'playing'));
-            currentPlayer.on('firstFrame', markPlayableFromJW);
+            currentPlayer.on('firstFrame', markPlayable);
             currentPlayer.on('buffer', () => setStatus('جاري التحميل...', 'loading'));
 
             currentPlayer.on('audioTracks', function() {
@@ -499,18 +501,11 @@
             currentPlayer.on('setupError', function() { setStatus('فشل التشغيل', 'error'); });
         }
 
-        function playStream(name, url, k1, k2, allKeys) {
+        function playStream(name, url, k1, k2) {
             if (!url) return;
             setTitle(name || 'رابط اختباري');
             setStatus('جاري التحميل...', 'loading');
 
-            if (document.getElementById('playerType').value === 'shaka') {
-                destroyJW();
-                playWithShaka(url, k1, k2, allKeys);
-                return;
-            }
-
-            destroyShaka();
             const item = { file: url };
             if (k1 && k2) item.drm = { clearkey: { keyId: k1, key: k2 } };
 
@@ -522,45 +517,15 @@
             }
         }
 
-        async function playWithShaka(url, k1, k2, allKeys) {
-            try {
-                shaka.polyfill.installAll();
-                let video = document.getElementById('shakaVideo');
-                if (!video) {
-                    document.getElementById('playerContainer').innerHTML =
-                        '<video id="shakaVideo" controls autoplay style="width:100%;height:100%;background:#000"></video>';
-                    video = document.getElementById('shakaVideo');
-                }
-                if (!shakaPlayer) {
-                    shakaPlayer = new shaka.Player(video);
-                    shakaPlayer.addEventListener('error', () => setStatus('فشل التشغيل', 'error'));
-                }
-                const keys = (allKeys && Object.keys(allKeys).length) ? allKeys : ((k1 && k2) ? { [k1]: k2 } : {});
-                shakaPlayer.configure({ drm: { clearKeys: keys } });
-                await shakaPlayer.load(url);
-                setStatus('يعمل الآن', 'playing');
-                markPlayableFromJW();
-            } catch (err) {
-                setStatus('فشل التشغيل', 'error');
-            }
-        }
-
         function destroyJW() {
-            if (currentPlayer) { currentPlayer.remove(); currentPlayer = null; }
-        }
-
-        function destroyShaka() {
-            if (shakaPlayer) { shakaPlayer.destroy(); shakaPlayer = null; }
-            if (document.getElementById('shakaVideo')) {
-                document.getElementById('playerContainer').innerHTML = '<div id="jwplayerDiv" style="width:100%;height:100%;"></div>';
-            }
+            if (currentPlayer) { try { currentPlayer.remove(); } catch (e) {} currentPlayer = null; }
+            ensurePlayerDiv();
         }
 
         /* إيقاف تام */
         function stopPlayer() {
             clearTimeout(playTimer);
             destroyJW();
-            destroyShaka();
             activeChannelIndex = -1;
             updateActiveChannelStyle();
             setStatus('متوقف', 'idle');
@@ -578,7 +543,7 @@
 
             activeChannelIndex = idx;
             updateActiveChannelStyle();
-            playStream(known ? known.name : 'اختبار سريّع', url, k1, k2, known ? known.allKeys : null);
+            playStream(known ? known.name : 'اختبار سريّع', url, k1, k2);
         }
 
         function playParsedChannel(index, alignTop = false) {
@@ -593,7 +558,7 @@
 
                 clearTimeout(playTimer);
                 setStatus('جاري التحميل...', 'loading');
-                playTimer = setTimeout(() => playStream(ch.name, ch.url, ch.k1, ch.k2, ch.allKeys), 180);
+                playTimer = setTimeout(() => playStream(ch.name, ch.url, ch.k1, ch.k2), 180);
             }
         }
 
@@ -635,63 +600,71 @@
         }
 
         /* ================================================================
-           الفحص الذكي للقنوات — ثلاث مراحل، والحكم النهائي لما يشتغل فعلاً:
-           1) Shaka بدون هيدرز: داخل iframe مخفي بشبكة نظيفة
-           2) Shaka بهيدرز: فقط للمرفوضة/الميتة، بنفس مسار التشغيل العادي (User-Agent المضبوط)
-           3) تأكيد على JW Player (مخفي وصامت): لأي نتيجة غير حاسمة (key / hdr / net / other)،
-              لأن فشل Shaka لوحده (DRM/EME في iframe مخفي، اختلاف التعامل مع الـ manifest) لا يعني أن القناة معطّلة.
-           ok = تشتغل بدون هيدرز | jwok = تشتغل على JW (Shaka فشل) | hdrok = تشتغل بهيدرز
-           hdr = مرفوضة حتى مع الهيدرز وعلى JW | dead = HTTP ميت (حاسم)
-           key = خطأ شفرة مؤكد (فشل Shaka وJW) | net/other = مهلة أو غير معروف
+           الفحص (JW Player فقط — مرحلتان):
+           1) بدون هيدرز: JW داخل iframe مخفي له fetch/XHR خاصان به (شبكة نظيفة، لا يمسّها تعديل الـ User-Agent)
+           2) بهيدرز: للمرفوضة/الميتة/المجهولة فقط، JW في الصفحة نفسها (يحمل الـ User-Agent المضبوط في الإعدادات)
+           ok = تشتغل بدون هيدرز | hdrok = تشتغل بهيدرز | hdr = مرفوضة (401/403/CORS) حتى مع الهيدرز
+           dead = الرابط ميت (404 ونحوه) | key = خطأ DRM/شفرة | net = انتهت المهلة | other = غير معروف
            ================================================================ */
-        const ICONS = { ok: '✅', jwok: '🎯', hdrok: '🔓', hdr: '🌐', dead: '❌', key: '⚠', net: '❓', other: '❓' };
+        const ICONS = { ok: '✅', hdrok: '🔓', hdr: '🌐', dead: '❌', key: '⚠', net: '❓', other: '❓' };
 
-        function classifyError(e) {
-            const code = e && e.code, status = e && e.data && e.data[1];
-            if (code === 1001) {
-                if ([401, 403, 407].includes(status)) return { s: 'hdr', msg: `🌐 مرفوضة HTTP ${status}: تحتاج User-Agent/Referer غالباً` };
-                return { s: 'dead', msg: `❌ HTTP ${status}: الرابط ميت أو منتهي` };
-            }
-            if (code >= 6000 && code < 7000) return { s: 'key', msg: `⚠ خطأ DRM/شفرة (${code})` };
-            if (code === 1002) return { s: 'hdr', msg: '🌐 فشل شبكة (غالباً 403 مخفي بسبب CORS): تحتاج UA/Referer غالباً، أو الرابط ميت' };
-            if (code === 1003) return { s: 'net', msg: '❓ انتهت المهلة: بطيئة أو ميتة' };
-            return { s: 'other', msg: '❓ خطأ ' + (code || (e && e.message) || '') };
+        function classifyJWError(e) {
+            const c = String((e && e.code) || ''), m = String((e && e.message) || '');
+            const has = n => c.endsWith(n) || new RegExp('(^|\\D)' + n + '(\\D|$)').test(m);
+            if (has('401') || has('403') || has('407') || /forbidden|denied|cross.?domain|cors/i.test(m))
+                return { s: 'hdr', msg: `🌐 مرفوضة (401/403/CORS)${c ? ' [' + c + ']' : ''}: تحتاج User-Agent/Referer غالباً` };
+            if (has('404') || has('410') || /not found|gone|\b5\d\d\b/i.test(m))
+                return { s: 'dead', msg: `❌ الرابط ميت أو منتهي${c ? ' [' + c + ']' : ''}` };
+            if (/drm|licen[sc]e|key|decrypt|encrypt|clearkey/i.test(m))
+                return { s: 'key', msg: `⚠ خطأ DRM/شفرة${c ? ' [' + c + ']' : ''}` };
+            return { s: 'other', msg: `❓ خطأ${c ? ' ' + c : ''} ${m}`.trim() };
         }
 
-        async function runProbe(S, doc, ch, timeout = 12000) {
-            let p, timer, late = null;
-            try {
-                const v = doc.createElement('video'); v.muted = true;
-                p = new S.Player(v);
-                // نعتبر فقط الأخطاء الحرجة (severity 2)؛ الأخطاء القابلة للتعافي لا تُسقط القناة
-                p.addEventListener('error', ev => {
-                    const d = ev.detail;
-                    if (d && d.severity === 2) late = late || d;
-                });
-                if (Object.keys(ch.allKeys || {}).length) p.configure({ drm: { clearKeys: ch.allKeys } });
-                await Promise.race([p.load(ch.url), new Promise((_, rej) => { timer = setTimeout(() => rej({ code: 1003 }), timeout); })]);
-                clearTimeout(timer);
-                await new Promise(r => setTimeout(r, 3500));          // ننتظر أخطاء تحميل أول المقاطع
-                if (late) throw late;
-                return { s: 'ok', msg: '✅ تعمل' };
-            } catch (e) { clearTimeout(timer); return classifyError(e); }
-            finally { try { if (p) await p.destroy(); } catch (e) {} }
+        /* تشغيل تجريبي صامت وخارج الشاشة: يعتبر القناة شغالة إذا ظهر أول إطار */
+        function runJWProbe(win, doc, ch, timeout = 14000) {
+            return new Promise(resolve => {
+                const id = 'jwProbe_' + Date.now() + '_' + Math.floor(Math.random() * 1e6);
+                const holder = doc.createElement('div');
+                holder.setAttribute('aria-hidden', 'true');
+                holder.style.cssText = 'position:fixed;left:-9999px;top:0;width:320px;height:180px;opacity:0;pointer-events:none';
+                const inner = doc.createElement('div'); inner.id = id;
+                holder.appendChild(inner); doc.body.appendChild(holder);
+
+                let pl = null, done = false, timer;
+                const finish = res => {
+                    if (done) return; done = true; clearTimeout(timer);
+                    try { if (pl) pl.remove(); } catch (e) {}
+                    try { holder.remove(); } catch (e) {}
+                    resolve(res);
+                };
+                const item = { file: ch.url };
+                if (ch.k1 && ch.k2) item.drm = { clearkey: { keyId: ch.k1, key: ch.k2 } };
+                try {
+                    pl = win.jwplayer(id).setup({ playlist: [item], width: 320, height: 180, autostart: true, mute: true });
+                } catch (e) { finish(classifyJWError(e)); return; }
+
+                pl.on('firstFrame', () => finish({ s: 'ok', msg: '✅ تعمل' }));
+                pl.on('time', e => { if (e && e.position > 0) finish({ s: 'ok', msg: '✅ تعمل' }); });
+                pl.on('error', e => finish(classifyJWError(e)));
+                pl.on('setupError', e => finish(classifyJWError(e)));
+                timer = setTimeout(() => finish({ s: 'net', msg: '❓ انتهت المهلة: بطيئة أو ميتة' }), timeout);
+            });
         }
 
-        /* iframe مخفي بمشغّل Shaka مستقل = شبكة نظيفة بلا أي هيدرز مضافة */
+        /* iframe مخفي بـ JW مستقل = شبكة نظيفة بلا أي هيدرز مضافة */
         let probeFramePromise = null;
         function getProbeFrame() {
             if (probeFramePromise) return probeFramePromise;
             probeFramePromise = new Promise(resolve => {
-                const srcEl = document.querySelector('script[src*="shaka"]');
-                const src = srcEl ? srcEl.src : 'https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.3.5/shaka-player.compiled.js';
                 const f = document.createElement('iframe');
-                f.setAttribute('aria-hidden', 'true'); f.setAttribute('allow', 'encrypted-media'); f.tabIndex = -1;
-                f.style.cssText = 'position:fixed;left:-9999px;top:0;width:2px;height:2px;border:0;opacity:0;pointer-events:none';
+                f.setAttribute('aria-hidden', 'true'); f.tabIndex = -1;
+                f.style.cssText = 'position:fixed;left:-9999px;top:0;width:340px;height:200px;border:0;opacity:0;pointer-events:none';
                 let done = false;
                 const fin = () => { if (!done) { done = true; resolve(f); } };
                 f.onload = fin; setTimeout(fin, 20000);
-                f.srcdoc = '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="referrer" content="no-referrer"></head><body><script src="' + src + '"><\/script></body></html>';
+                f.srcdoc = '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="referrer" content="no-referrer"></head><body>' +
+                    '<script src="https://ssl.p.jwpcdn.com/player/v/8.26.0/jwplayer.js"><\/script>' +
+                    '<script>jwplayer.key="' + JW_KEY + '";<\/script></body></html>';
                 document.body.appendChild(f);
             });
             return probeFramePromise;
@@ -699,69 +672,25 @@
 
         async function probeWithoutHeaders(ch, frame) {
             const w = frame && frame.contentWindow;
-            if (!w || !w.shaka) return { s: 'other', msg: '❓ تعذّر تحميل مشغّل الفحص' };
-            try { if (!w.__polyDone) { w.shaka.polyfill.installAll(); w.__polyDone = true; } } catch (e) {}
-            return runProbe(w.shaka, frame.contentDocument, ch);
+            if (!w || !w.jwplayer) return { s: 'other', msg: '❓ تعذّر تحميل مشغّل الفحص' };
+            return runJWProbe(w, frame.contentDocument, ch);
         }
 
-        async function probeWithHeaders(ch) {
-            try { shaka.polyfill.installAll(); } catch (e) {}
-            return runProbe(shaka, document, ch);
+        function probeWithHeaders(ch) {
+            return runJWProbe(window, document, ch);
         }
 
-        /* تأكيد على JW Player الحقيقي (مخفي وصامت)، واحدة تلو الأخرى */
-        let jwProbeChain = Promise.resolve();
-        function probeWithJW(ch, timeout = 14000) {
-            const run = () => new Promise(resolve => {
-                const id = 'jwProbe_' + Date.now() + '_' + Math.floor(Math.random() * 1e6);
-                const holder = document.createElement('div');
-                holder.setAttribute('aria-hidden', 'true');
-                holder.style.cssText = 'position:fixed;left:-9999px;top:0;width:320px;height:180px;opacity:0;pointer-events:none';
-                const inner = document.createElement('div'); inner.id = id;
-                holder.appendChild(inner); document.body.appendChild(holder);
-
-                let pl = null, done = false, timer;
-                const finish = res => {
-                    if (done) return; done = true; clearTimeout(timer);
-                    try { if (pl) pl.remove(); } catch (e) {}
-                    holder.remove(); resolve(res);
-                };
-                const item = { file: ch.url };
-                if (ch.k1 && ch.k2) item.drm = { clearkey: { keyId: ch.k1, key: ch.k2 } };
-                try {
-                    pl = jwplayer(id).setup({ playlist: [item], width: 320, height: 180, autostart: true, mute: true });
-                } catch (e) { finish({ ok: false, msg: 'setup' }); return; }
-
-                pl.on('firstFrame', () => finish({ ok: true }));
-                pl.on('time', e => { if (e && e.position > 0) finish({ ok: true }); });
-                pl.on('error', e => finish({ ok: false, msg: (e && (e.message || e.code)) || '' }));
-                pl.on('setupError', e => finish({ ok: false, msg: (e && (e.message || e.code)) || '' }));
-                timer = setTimeout(() => finish({ ok: false, timeout: true }), timeout);
-            });
-            const p = jwProbeChain.then(run, run);
-            jwProbeChain = p.catch(() => {});
-            return p;
-        }
-
-        /* فحص قناة واحدة بتصنيف ذكي */
         async function probeChannel(ch, frame, token) {
-            let r = await probeWithoutHeaders(ch, frame);
+            const r = await probeWithoutHeaders(ch, frame);
             if (token !== probeToken) return null;
-
-            if (r.s === 'hdr' || r.s === 'dead') {              // مرفوضة/ميتة بدون هيدرز: نجرّبها بالهيدرز
+            if (r.s === 'ok') return r;
+            if (r.s === 'hdr' || r.s === 'dead' || r.s === 'other') {   // نجرّبها بالهيدرز قبل التصنيف النهائي
                 const r2 = await probeWithHeaders(ch);
                 if (token !== probeToken) return null;
                 if (r2.s === 'ok') return { s: 'hdrok', msg: '🔓 تشتغل بهيدرز (User-Agent المضبوط في الإعدادات)' };
                 if (r.s === 'hdr') r.msg += ' — وما زالت مرفوضة حتى مع الهيدرز';
             }
-
-            if (r.s === 'ok' || r.s === 'dead') return r;       // الحاسم: تعمل، أو HTTP ميت
-
-            // غير حاسم (key / hdr / net / other): فشل Shaka لا يكفي للحكم، نؤكد على JW
-            const j = await probeWithJW(ch);
-            if (token !== probeToken) return null;
-            if (j.ok) return { s: 'jwok', msg: `🎯 تشتغل على JW (فحص Shaka فشل: ${r.msg.replace(/^\S+\s/, '')})` };
-            return { s: r.s, msg: r.msg + (j.timeout ? ' — وانتهت مهلة JW أيضاً' : ' — وتأكد فشلها على JW أيضاً') };
+            return r;
         }
 
         let probeToken = 0;
@@ -784,11 +713,11 @@
                     if (done % 4 === 0) renderList(true);
                 }
             };
-            await Promise.all([worker(), worker(), worker(), worker(), worker()]);
+            await Promise.all([worker(), worker(), worker(), worker()]);
             if (token !== probeToken) { return; }
             prog.textContent = ''; renderList(true);
             const c = k => list.filter(x => x.probe && x.probe.s === k).length;
-            showToast(`انتهى الفحص: ✅ ${c('ok')} | 🎯 ${c('jwok')} | 🔓 ${c('hdrok')} | 🌐 ${c('hdr')} | ❌ ${c('dead')} | ⚠ ${c('key')} | ❓ ${c('net') + c('other')}`);
+            showToast(`انتهى الفحص: ✅ ${c('ok')} | 🔓 ${c('hdrok')} | 🌐 ${c('hdr')} | ❌ ${c('dead')} | ⚠ ${c('key')} | ❓ ${c('net') + c('other')}`);
         }
 
         /* ===== مجموعات تقسيم القنوات ===== */
@@ -797,18 +726,17 @@
             mpd:   { label: 'MPD',          test: c => getType(c.url) === 'mpd' },
             m3u8:  { label: 'M3U8',         test: c => getType(c.url) === 'm3u8' },
             extra: { label: 'صيغ إضافية',   hint: 'TS وغيرها', test: c => ['ts', 'other'].includes(getType(c.url)) },
-            bad:   { label: 'قنوات معطّلة', hint: 'ميتة / شفرة خاطئة مؤكدة', test: c => ['dead', 'key'].includes(pr_(c)) },
+            bad:   { label: 'قنوات معطّلة', hint: 'ميتة / شفرة خاطئة', test: c => ['dead', 'key'].includes(pr_(c)) },
             ok:    { label: '✅ تشتغل بدون هيدرز', test: c => pr_(c) === 'ok' },
-            jwok:  { label: '🎯 تشتغل على JW فقط', test: c => pr_(c) === 'jwok' },
             hdrok: { label: '🔓 تشتغل بهيدرز', hint: 'User-Agent', test: c => pr_(c) === 'hdrok' },
-            hdr:   { label: '🌐 مرفوضة (401 / 403) أو فشل شبكة', hint: 'حتى مع الهيدرز', test: c => pr_(c) === 'hdr' },
+            hdr:   { label: '🌐 مرفوضة (401 / 403)', hint: 'حتى مع الهيدرز', test: c => pr_(c) === 'hdr' },
             dead:  { label: '❌ الرابط ميت', test: c => pr_(c) === 'dead' },
             key:   { label: '⚠ خطأ في الشفرة', test: c => pr_(c) === 'key' },
             net:   { label: '❓ انتهت المهلة', test: c => ['net', 'other'].includes(pr_(c)) }
         };
         const SECTIONS = [
             { title: 'حسب الصيغة', items: ['mpd', 'm3u8', 'extra', 'bad'] },
-            { title: 'حسب نتيجة الفحص', items: ['ok', 'jwok', 'hdrok', 'hdr', 'dead', 'key', 'net'] }
+            { title: 'حسب نتيجة الفحص', items: ['ok', 'hdrok', 'hdr', 'dead', 'key', 'net'] }
         ];
 
         function renderGroupMenu() {
@@ -816,7 +744,7 @@
             const list = window.extractedChannelsList;
             menu.innerHTML = SECTIONS.map(sec => `<div class="gm-title">${sec.title}</div>` + sec.items.map(g => {
                 const G = GROUPS[g], n = list.filter(G.test).length;
-                const hint = G.hint && !/[✅🎯🔓🌐❌⚠❓]/.test(G.label) ? ` <small style="color:#777">(${G.hint})</small>` : '';
+                const hint = G.hint && !/[✅🔓🌐❌⚠❓]/.test(G.label) ? ` <small style="color:#777">(${G.hint})</small>` : '';
                 return `<div class="gm-item${currentFilter === g ? ' sel' : ''}" onclick="applyGroupFilter('${g}')" title="عرض قنوات هذه المجموعة في قائمة القنوات">
                     <span class="gm-label">${G.label}${hint}</span><span class="count">${n}</span></div>`;
             }).join('')).join('');
@@ -1295,18 +1223,13 @@ function parseInputText(text) {
     parseObjects(src, hits, store);
     parseLoose(src, hits, store);
 
-    const out = store.list.map(ex => {
-        const allKeys = {};
-        ex.pairs.forEach(p => { allKeys[p[0]] = p[1]; });
-        return {
-            name: ex.name || nameFromUrl(ex.url),
-            url: ex.url,
-            k1: ex.pairs.length ? ex.pairs[0][0] : '',
-            k2: ex.pairs.length ? ex.pairs[0][1] : '',
-            allKeys,
-            _pos: src.indexOf(ex.url)
-        };
-    });
+    const out = store.list.map(ex => ({
+        name: ex.name || nameFromUrl(ex.url),
+        url: ex.url,
+        k1: ex.pairs.length ? ex.pairs[0][0] : '',
+        k2: ex.pairs.length ? ex.pairs[0][1] : '',
+        _pos: src.indexOf(ex.url)
+    }));
     out.sort((a, b) => a._pos - b._pos);
     out.forEach(c => { delete c._pos; });
     return out;
@@ -1330,7 +1253,7 @@ function parseInputText(text) {
                 return;
             }
             showToast(`تم استخراج ${window.extractedChannelsList.length} قناة`);
-            probeAll();                                     // الفحص الذكي التلقائي
+            probeAll();                                     // الفحص التلقائي: بدون هيدرز ثم بهيدرز
         }
 
         function clearAll() {
